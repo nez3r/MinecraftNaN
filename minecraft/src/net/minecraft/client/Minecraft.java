@@ -167,6 +167,24 @@ public abstract class Minecraft implements Runnable {
 	private int originalBlockId = -1;
 	private int blockMorphTimer = 0;
 	private boolean nanBlockActive = false;
+	private long lastMysteryEventTime = 0L;
+	// Final event variables
+	private boolean finalEventActive = false;
+	private long finalEventStartTime = 0L;
+	private int finalEventChatSpamTimer = 0;
+	private int finalEventTeleportTimer = 0;
+	private int finalEventShakeIntensity = 0;
+	private String[] scaryMessages = new String[] {
+		"§4HE IS HERE", "§0RUN", "§cNO ESCAPE", "§4LOOK BEHIND YOU", 
+		"§5DIE", "§8666", "§4NaN ERROR", "§cSYSTEM FAILURE",
+		"§0YOUR SOUL IS MINE", "§4GAME OVER", "§cFATAL EXCEPTION",
+		"§4REALITY COLLAPSING", "§8VOID", "§4DELETING...", "§cCORRUPTED"
+	};
+	private String[] randomTitles = new String[] {
+		"Minecraft NaN", "ERROR", "HELP ME", "666", "VOID", 
+		"CORRUPTED", "DEAD", "NaN", "!!!", "RUN", "HE IS COMING",
+		"FATAL ERROR", "SYSTEM FAILURE", "0x00000000", "§4§lN̴A̴N̴"
+	};
 
 	public Minecraft(Component var1, Canvas var2, MinecraftApplet var3, int var4, int var5, boolean var6) {
 		StatList.func_27360_a();
@@ -534,6 +552,15 @@ public abstract class Minecraft implements Runnable {
 				}
 
 				if(!Keyboard.isKeyDown(Keyboard.KEY_F7)) {
+					// Random title change during final event (every 50ms)
+					if(this.finalEventActive && this.random.nextInt(2) == 0) {
+						String title = this.randomTitles[this.random.nextInt(this.randomTitles.length)];
+						try {
+							Display.setTitle(title);
+						} catch(Exception e) {
+							// Ignore
+						}
+					}
 					Display.update();
 				}
 
@@ -543,6 +570,11 @@ public abstract class Minecraft implements Runnable {
 					}
 
 					this.entityRenderer.updateCameraAndRender(this.timer.renderPartialTicks);
+
+					// Draw scary overlays during final event
+					if(this.finalEventActive) {
+						this.renderFinalEventOverlay();
+					}
 				}
 
 				if(!Display.isActive()) {
@@ -903,6 +935,20 @@ public abstract class Minecraft implements Runnable {
 				this.herobrineErrorShown = true;
 				this.displayHerobrineError();
 			}
+		}
+
+		// Trigger mystery event every 5 minutes after the first event
+		if(this.thePlayer != null && this.theWorld != null && this.lastMysteryEventTime > 0L && !this.finalEventActive) {
+			long timeSinceLastEvent = System.currentTimeMillis() - this.lastMysteryEventTime;
+			if(timeSinceLastEvent >= 300000L) { // 5 minutes = 300000 milliseconds
+				this.triggerNextMysteryEvent();
+				this.lastMysteryEventTime = System.currentTimeMillis();
+			}
+		}
+
+		// Handle final event sequence
+		if(this.finalEventActive && this.thePlayer != null && this.theWorld != null) {
+			this.updateFinalEvent();
 		}
 
 		int var3;
@@ -1290,6 +1336,11 @@ public abstract class Minecraft implements Runnable {
 				this.gameStartTime = System.currentTimeMillis();
 			}
 
+			// Initialize mystery event timer when world loads
+			if(this.lastMysteryEventTime == 0L) {
+				this.lastMysteryEventTime = System.currentTimeMillis();
+			}
+
 			this.playerController.func_717_a(var1);
 			if(!this.isMultiplayerWorld()) {
 				if(var3 == null) {
@@ -1571,6 +1622,11 @@ public abstract class Minecraft implements Runnable {
 			return;
 		}
 
+		// Set the last event time when triggering the first event
+		if(this.lastMysteryEventTime == 0L) {
+			this.lastMysteryEventTime = System.currentTimeMillis();
+		}
+
 		++this.currentMysteryEvent;
 
 		switch(this.currentMysteryEvent) {
@@ -1586,19 +1642,19 @@ public abstract class Minecraft implements Runnable {
 				break;
 			case 3:
 				// Time anomaly + Netherrack with fire
-				this.thePlayer.addChatMessage("§5[FATAL] Reality anchor lost");
+				this.thePlayer.addChatMessage("§5ohh");
 				this.spawnNetherrackWithFire();
 				break;
 			case 4:
 				// Entity warning + ground vanish
-				this.thePlayer.addChatMessage("§4Unknown entity detected at coordinates: §c" +
+				this.thePlayer.addChatMessage("§4...: §c" +
 					(int)this.thePlayer.posX + ", " + (int)this.thePlayer.posY + ", " + (int)this.thePlayer.posZ);
 				this.vanishGroundPatch();
 				break;
 			case 5:
 				// Silence event
 				this.thePlayer.addChatMessage("§0...");
-				this.thePlayer.addChatMessage("§8[System] Audio stream terminated unexpectedly");
+				this.thePlayer.addChatMessage("§8STOP");
 				break;
 			case 6:
 				// Fake stack trace
@@ -1613,20 +1669,23 @@ public abstract class Minecraft implements Runnable {
 				break;
 			case 8:
 				// Memory address flood
-				this.thePlayer.addChatMessage("§4[CRITICAL] Memory region 0x" +
-					Integer.toHexString(this.random.nextInt()) + " corrupted");
-				this.thePlayer.addChatMessage("§4[CRITICAL] Dumping core...");
+				this.thePlayer.addChatMessage("§40x" +
+					Integer.toHexString(this.random.nextInt()) + " error");
+				this.thePlayer.addChatMessage("§4 NaN");
 				break;
 			case 9:
 				// Save corruption warning
-				this.thePlayer.addChatMessage("§4you shouldn't be here");
-				this.thePlayer.addChatMessage("§8[Warning] World save contains NaN values");
+				this.thePlayer.addChatMessage("§4tjp ncjpgyi'o wz czmz");
+				this.thePlayer.addChatMessage("§8NaN");
 				break;
 			case 10:
-				// Final event
+				// Final event - starts the horror sequence
 				this.thePlayer.addChatMessage("§0He is coming");
 				this.spawnBedrockCrosses();
 				this.spawnNetherrackWithFire();
+				// Start the final event sequence
+				this.finalEventActive = true;
+				this.finalEventStartTime = System.currentTimeMillis();
 				this.currentMysteryEvent = 0;
 				break;
 			default:
@@ -1723,5 +1782,102 @@ public abstract class Minecraft implements Runnable {
 		if(this.thePlayer != null) {
 			this.thePlayer.addChatMessage("§4I will kill you and then resurrect you to kill you again.");
 		}
+	}
+
+	private void updateFinalEvent() {
+		long elapsed = System.currentTimeMillis() - this.finalEventStartTime;
+
+		// After 15 seconds (15000ms), kill the player
+		if(elapsed >= 15000L) {
+			if(this.thePlayer != null && !this.thePlayer.isDead()) {
+				this.thePlayer.health = 0;
+				this.thePlayer.onDeath(null);
+			}
+			// After 4 more seconds (19000ms total), crash with Float error
+			if(elapsed >= 19000L) {
+				throw new RuntimeException("java.lang.Float: NaN");
+			}
+			return;
+		}
+
+		// Chat spam every ~100ms (every 2 ticks at 20tps)
+		this.finalEventChatSpamTimer++;
+		if(this.finalEventChatSpamTimer >= 2) {
+			this.finalEventChatSpamTimer = 0;
+			if(this.thePlayer != null) {
+				String msg = this.scaryMessages[this.random.nextInt(this.scaryMessages.length)];
+				this.thePlayer.addChatMessage(msg);
+				// Spam logs
+				System.out.println("java.lang.securityerror /!\\ " + msg);
+			}
+		}
+
+		// Teleport every 2.5 seconds (50 ticks at 20tps)
+		this.finalEventTeleportTimer++;
+		if(this.finalEventTeleportTimer >= 50) {
+			this.finalEventTeleportTimer = 0;
+			if(this.thePlayer != null && this.theWorld != null) {
+				double newX = this.thePlayer.posX + (this.random.nextDouble() * 40.0 - 20.0);
+				double newY = this.thePlayer.posY + (this.random.nextDouble() * 20.0 - 10.0);
+				double newZ = this.thePlayer.posZ + (this.random.nextDouble() * 40.0 - 20.0);
+				// Clamp Y to valid range
+				if(newY < 1.0) newY = 64.0;
+				this.thePlayer.setPositionAndUpdate(newX, newY, newZ);
+				this.thePlayer.addChatMessage("§cWHERE ARE YOU GOING?");
+			}
+		}
+
+		// Screen shake - increase intensity over time
+		this.finalEventShakeIntensity++;
+		if(this.finalEventShakeIntensity > 20) {
+			this.finalEventShakeIntensity = 20;
+		}
+		if(this.entityRenderer != null && this.finalEventShakeIntensity > 0) {
+			float shake = (float)this.finalEventShakeIntensity / 20.0F * 5.0F;
+			this.entityRenderer.cameraPitch += (this.random.nextFloat() - 0.5F) * shake;
+			this.entityRenderer.cameraYaw += (this.random.nextFloat() - 0.5F) * shake;
+		}
+	}
+
+	private void renderFinalEventOverlay() {
+		if(!this.finalEventActive) return;
+
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		GL11.glDisable(GL11.GL_LIGHTING);
+		GL11.glEnable(GL11.GL_BLEND);
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+		GL11.glMatrixMode(GL11.GL_PROJECTION);
+		GL11.glLoadIdentity();
+		GL11.glOrtho(0.0D, (double)this.displayWidth, (double)this.displayHeight, 0.0D, -1.0D, 1.0D);
+		GL11.glMatrixMode(GL11.GL_MODELVIEW);
+		GL11.glLoadIdentity();
+		GL11.glTranslatef(0.0F, 0.0F, -90.0F);
+
+		Tessellator tessellator = Tessellator.instance;
+
+		// Random red flashes
+		if(this.random.nextInt(10) == 0) {
+			GL11.glColor4f(1.0F, 0.0F, 0.0F, 0.3F);
+			tessellator.startDrawingQuads();
+			tessellator.addVertexWithUV(0.0D, (double)this.displayHeight, 0.0D, 0.0D, 0.0D);
+			tessellator.addVertexWithUV((double)this.displayWidth, (double)this.displayHeight, 0.0D, 1.0D, 0.0D);
+			tessellator.addVertexWithUV((double)this.displayWidth, 0.0D, 0.0D, 1.0D, 1.0D);
+			tessellator.addVertexWithUV(0.0D, 0.0D, 0.0D, 0.0D, 1.0D);
+			tessellator.draw();
+		}
+
+		// Draw scary text overlays at random positions
+		GL11.glColor4f(1.0F, 1.0F, 1.0F, 0.8F);
+		for(int i = 0; i < 3; i++) {
+			if(this.random.nextInt(5) == 0) {
+				int x = this.random.nextInt(this.displayWidth);
+				int y = this.random.nextInt(this.displayHeight);
+				String text = this.scaryMessages[this.random.nextInt(this.scaryMessages.length)];
+				this.fontRenderer.drawStringWithShadow(text, x, y, 0xFF0000);
+			}
+		}
+
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glDisable(GL11.GL_BLEND);
 	}
 }
