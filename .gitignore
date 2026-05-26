@@ -1,52 +1,38 @@
-```
-# Compiled and build artifacts
-*.pyc
-__pycache__/
-*.class
-*.o
-*.obj
-*.exe
-*.dll
-*.so
-*.a
-*.out
-dist/
+# Скрипты автоматизации и архиваторы
+gitpub.bat
+7z.exe
+7z.dll
+
+# Исполняемые файлы и утилиты RetroMCP
+RetroMCP-Java-CLI.jar
+RetroMCP-Java-GUI.jar
+
+# Папки сборщика, библиотек и самого сервера
 build/
-target/
+conf/
+doc/
+jars/
+libraries/
+minecraft_server/
+freeminecraft/
 
-# Dependencies
-node_modules/
-venv/
-.venv/
-.env
-.env.local
-.env.*
+# Клод и AI-настройки
+.claude/
+CLAUDE.md
 
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-*.swo
-
-# Editors
-.vscode/
+# Настройки среды разработки (IDE) в корне и подпапках
 .idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
 
-# System files
-.DS_Store
-Thumbs.db
+# Папки компиляции внутри /minecraft
+minecraft/bin/
+minecraft/reobf/
+minecraft/md5/
+minecraft/jars/
 
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Gradle
-.gradle/
-
-# MyPy
-.mypy_cache/
-
-# Pytest
-.pytest_cache/
-```
+# Рабочие файлы игры (карты, логи, конфиги модов)
+minecraft/game/
