@@ -1,0 +1,8 @@
+echo "# MinecraftNaN" >> README.md
+echo "В разработке." >> README.md
+git init
+git add .
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/nez3r/MinecraftNaN.git
+git push -u origin main

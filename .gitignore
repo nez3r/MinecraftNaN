@@ -1,0 +1,38 @@
+# Скрипты автоматизации и архиваторы
+gitpub.bat
+7z.exe
+7z.dll
+
+# Исполняемые файлы и утилиты RetroMCP
+RetroMCP-Java-CLI.jar
+RetroMCP-Java-GUI.jar
+
+# Папки сборщика, библиотек и самого сервера
+build/
+conf/
+doc/
+jars/
+libraries/
+minecraft_server/
+NaN/
+
+# Клод и AI-настройки
+.claude/
+CLAUDE.md
+
+# Настройки среды разработки (IDE) в корне и подпапках
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# Папки компиляции внутри /minecraft
+minecraft/bin/
+minecraft/reobf/
+minecraft/md5/
+minecraft/jars/
+
+# Рабочие файлы игры (карты, логи, конфиги модов)
+minecraft/game/
