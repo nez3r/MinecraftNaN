@@ -161,6 +161,12 @@ public abstract class Minecraft implements Runnable {
 	private boolean herobrineErrorShown = false;
 	private int currentMysteryEvent = 0;
 	private Random random = new Random();
+	private int nanTickCounter = 0;
+	private int inventoryGlitchTimer = 0;
+	private int glitchedSlot = -1;
+	private int originalBlockId = -1;
+	private int blockMorphTimer = 0;
+	private boolean nanBlockActive = false;
 
 	public Minecraft(Component var1, Canvas var2, MinecraftApplet var3, int var4, int var5, boolean var6) {
 		StatList.func_27360_a();
@@ -1120,9 +1126,72 @@ public abstract class Minecraft implements Runnable {
 			if(!this.isWorldLoaded) {
 				this.effectRenderer.updateEffects();
 			}
+
+			// NaN features tick
+			++this.nanTickCounter;
+			this.nanBlockTick();
+			this.inventoryGlitchTick();
+			this.blockMorphTick();
 		}
 
 		this.systemTime = System.currentTimeMillis();
+	}
+
+	private void nanBlockTick() {
+		if(this.thePlayer == null || this.theWorld == null) {
+			return;
+		}
+		int px = MathHelper.floor_double(this.thePlayer.posX);
+		int py = MathHelper.floor_double(this.thePlayer.posY) - 1;
+		int pz = MathHelper.floor_double(this.thePlayer.posZ);
+		int blockBelow = this.theWorld.getBlockId(px, py, pz);
+
+		// Sponge acts as NaN block: slowness + camera shake
+		if(blockBelow == Block.sponge.blockID) {
+			this.thePlayer.motionX *= 0.3D;
+			this.thePlayer.motionZ *= 0.3D;
+
+			if(this.nanTickCounter % 5 == 0) {
+				this.thePlayer.rotationYaw += (this.random.nextFloat() - 0.5F) * 2.0F;
+				this.thePlayer.rotationPitch += (this.random.nextFloat() - 0.5F) * 1.0F;
+			}
+		}
+	}
+
+	private void inventoryGlitchTick() {
+		++this.inventoryGlitchTimer;
+
+		if(this.glitchedSlot >= 0 && this.inventoryGlitchTimer % 40 == 0) {
+			this.glitchedSlot = -1;
+		}
+
+		if(this.inventoryGlitchTimer >= 800 + this.random.nextInt(1600)) {
+			this.inventoryGlitchTimer = 0;
+			this.glitchedSlot = this.random.nextInt(9);
+		}
+	}
+
+	private void blockMorphTick() {
+		++this.blockMorphTimer;
+		if(this.thePlayer == null || this.theWorld == null) {
+			return;
+		}
+		if(this.blockMorphTimer >= 1200 + this.random.nextInt(2400)) {
+			this.blockMorphTimer = 0;
+			int px = MathHelper.floor_double(this.thePlayer.posX) + this.random.nextInt(6) - 3;
+			int py = MathHelper.floor_double(this.thePlayer.posY) - 1;
+			int pz = MathHelper.floor_double(this.thePlayer.posZ) + this.random.nextInt(6) - 3;
+			int blockId = this.theWorld.getBlockId(px, py, pz);
+			if(blockId != 0 && blockId != Block.bedrock.blockID) {
+				int[] morphTargets = new int[]{Block.waterStill.blockID, 0, Block.sand.blockID, Block.gravel.blockID};
+				int newBlock = morphTargets[this.random.nextInt(morphTargets.length)];
+				this.theWorld.setBlockWithNotify(px, py, pz, newBlock);
+			}
+		}
+	}
+
+	public int getGlitchedSlot() {
+		return this.glitchedSlot;
 	}
 
 	private void forceReload() {
@@ -1506,46 +1575,90 @@ public abstract class Minecraft implements Runnable {
 
 		switch(this.currentMysteryEvent) {
 			case 1:
-				// Event 1: Strange whispers + Bedrock crosses above player
+				// Strange whispers + Bedrock crosses above player
 				this.thePlayer.addChatMessage("§8[???] I see you...");
 				this.spawnBedrockCrosses();
 				break;
 			case 2:
-				// Event 2: Reality glitch + Weather change
-				this.thePlayer.addChatMessage("§cWarning: GL11 is corrupted.");
+				// Reality glitch + Weather change
+				this.thePlayer.addChatMessage("§cjava.lang.RuntimeException: GL11 context corrupted");
 				this.toggleWeather();
 				break;
 			case 3:
-				// Event 3: Time anomaly + Netherrack with fire
-				this.thePlayer.addChatMessage("§5nope");
+				// Time anomaly + Netherrack with fire
+				this.thePlayer.addChatMessage("§5[FATAL] Reality anchor lost");
 				this.spawnNetherrackWithFire();
 				break;
 			case 4:
-				// Event 4: Entity warning
+				// Entity warning + ground vanish
 				this.thePlayer.addChatMessage("§4Unknown entity detected at coordinates: §c" +
 					(int)this.thePlayer.posX + ", " + (int)this.thePlayer.posY + ", " + (int)this.thePlayer.posZ);
+				this.vanishGroundPatch();
 				break;
 			case 5:
-				// Event 5: Memory corruption
-				this.thePlayer.addChatMessage("§0Stay away. ");
+				// Silence event
+				this.thePlayer.addChatMessage("§0...");
+				this.thePlayer.addChatMessage("§8[System] Audio stream terminated unexpectedly");
 				break;
 			case 6:
-				// Event 6: The watcher
-				this.thePlayer.addChatMessage("§4Something is watching you");
+				// Fake stack trace
+				this.thePlayer.addChatMessage("§cjava.lang.NullPointerException");
+				this.thePlayer.addChatMessage("§c  at net.minecraft.src.Entity.onUpdate(Entity.java:NaN)");
+				this.thePlayer.addChatMessage("§c  at net.minecraft.src.World.tick(World.java:NaN)");
 				break;
 			case 7:
-				// Event 7: Save corruption
-				this.thePlayer.addChatMessage("§4you shouldn't be here");
+				// The watcher - spawn sponge blocks around player
+				this.thePlayer.addChatMessage("§4Something is watching you");
+				this.spawnNaNBlocks();
 				break;
 			case 8:
-				// Event 8: Final message
+				// Memory address flood
+				this.thePlayer.addChatMessage("§4[CRITICAL] Memory region 0x" +
+					Integer.toHexString(this.random.nextInt()) + " corrupted");
+				this.thePlayer.addChatMessage("§4[CRITICAL] Dumping core...");
+				break;
+			case 9:
+				// Save corruption warning
+				this.thePlayer.addChatMessage("§4you shouldn't be here");
+				this.thePlayer.addChatMessage("§8[Warning] World save contains NaN values");
+				break;
+			case 10:
+				// Final event
 				this.thePlayer.addChatMessage("§0He is coming");
-				this.currentMysteryEvent = 0; // Reset for loop
+				this.spawnBedrockCrosses();
+				this.spawnNetherrackWithFire();
+				this.currentMysteryEvent = 0;
 				break;
 			default:
 				this.currentMysteryEvent = 0;
 				this.thePlayer.addChatMessage("§7...");
 				break;
+		}
+	}
+
+	private void vanishGroundPatch() {
+		int px = (int)this.thePlayer.posX;
+		int py = (int)this.thePlayer.posY - 1;
+		int pz = (int)this.thePlayer.posZ;
+
+		for(int x = -2; x <= 2; ++x) {
+			for(int z = -2; z <= 2; ++z) {
+				if(this.random.nextInt(3) != 0) {
+					this.theWorld.setBlockWithNotify(px + x, py, pz + z, 0);
+				}
+			}
+		}
+	}
+
+	private void spawnNaNBlocks() {
+		int px = (int)this.thePlayer.posX;
+		int py = (int)this.thePlayer.posY;
+		int pz = (int)this.thePlayer.posZ;
+
+		for(int i = 0; i < 5; ++i) {
+			int ox = this.random.nextInt(10) - 5;
+			int oz = this.random.nextInt(10) - 5;
+			this.theWorld.setBlockWithNotify(px + ox, py - 1, pz + oz, Block.sponge.blockID);
 		}
 	}
 

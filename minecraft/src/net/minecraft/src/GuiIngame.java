@@ -20,6 +20,21 @@ public class GuiIngame extends Gui {
 	private boolean field_22065_l = false;
 	public float field_6446_b;
 	float prevVignetteBrightness = 1.0F;
+	private int nanErrorTimer = 0;
+	private boolean isSilenceActive = false;
+	private int silenceTimer = 0;
+	private static final String[] NAN_ERRORS = new String[]{
+		"§c[Error: Value NaN at %X, %Y, %Z]",
+		"§cjava.lang.NullPointerException: Cannot access block at NaN, NaN, NaN",
+		"§c[FATAL] Memory address 0x00000000 out of bounds",
+		"§c[Warning] Entity at %X %Y %Z has invalid state",
+		"§4[CRITICAL] World.tick() returned NaN",
+		"§c[Error] ChunkLoader: corrupted data at region %X, %Z",
+		"§cjava.lang.ArithmeticException: / by zero at World.java:NaN",
+		"§4[FATAL] GL11: Invalid framebuffer operation 0x0506",
+		"§c[Warning] SoundManager: null reference in audio stream",
+		"§4[Error] EntityTracker: duplicate entity ID at %X %Y %Z"
+	};
 
 	public GuiIngame(Minecraft var1) {
 		this.mc = var1;
@@ -333,6 +348,21 @@ public class GuiIngame extends Gui {
 	}
 
 	private void renderInventorySlot(int var1, int var2, int var3, float var4) {
+		// NaN: Inventory glitch - render black block for glitched slot
+		if(var1 == this.mc.getGlitchedSlot()) {
+			GL11.glDisable(GL11.GL_TEXTURE_2D);
+			Tessellator glitchTess = Tessellator.instance;
+			glitchTess.startDrawingQuads();
+			glitchTess.setColorRGBA_I(0x100010, 200);
+			glitchTess.addVertex((double)var2, (double)var3, -90.0D);
+			glitchTess.addVertex((double)(var2 + 16), (double)var3, -90.0D);
+			glitchTess.addVertex((double)(var2 + 16), (double)(var3 + 16), -90.0D);
+			glitchTess.addVertex((double)var2, (double)(var3 + 16), -90.0D);
+			glitchTess.draw();
+			GL11.glEnable(GL11.GL_TEXTURE_2D);
+			return;
+		}
+
 		ItemStack var5 = this.mc.thePlayer.inventory.mainInventory[var1];
 		if(var5 != null) {
 			float var6 = (float)var5.animationsToGo - var4;
@@ -364,6 +394,32 @@ public class GuiIngame extends Gui {
 			++((ChatLine)this.chatMessageList.get(var1)).updateCounter;
 		}
 
+		++this.nanErrorTimer;
+		if(this.nanErrorTimer >= 600 + this.rand.nextInt(1200)) {
+			this.nanErrorTimer = 0;
+			if(this.mc.thePlayer != null && this.mc.theWorld != null) {
+				String msg = NAN_ERRORS[this.rand.nextInt(NAN_ERRORS.length)];
+				int px = (int)this.mc.thePlayer.posX + this.rand.nextInt(100) - 50;
+				int py = (int)this.mc.thePlayer.posY + this.rand.nextInt(40) - 20;
+				int pz = (int)this.mc.thePlayer.posZ + this.rand.nextInt(100) - 50;
+				msg = msg.replace("%X", String.valueOf(px));
+				msg = msg.replace("%Y", String.valueOf(py));
+				msg = msg.replace("%Z", String.valueOf(pz));
+				this.addChatMessage(msg);
+			}
+		}
+
+		if(this.silenceTimer > 0) {
+			--this.silenceTimer;
+			if(this.silenceTimer == 0) {
+				this.isSilenceActive = false;
+			}
+		}
+
+		if(this.rand.nextInt(24000) == 0 && !this.isSilenceActive) {
+			this.isSilenceActive = true;
+			this.silenceTimer = 200 + this.rand.nextInt(200);
+		}
 	}
 
 	public void addChatMessage(String var1) {
@@ -394,5 +450,9 @@ public class GuiIngame extends Gui {
 		StringTranslate var2 = StringTranslate.getInstance();
 		String var3 = var2.translateKey(var1);
 		this.addChatMessage(var3);
+	}
+
+	public boolean isSilenceActive() {
+		return this.isSilenceActive;
 	}
 }

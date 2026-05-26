@@ -195,6 +195,14 @@ public class ChunkProviderGenerate implements IChunkProvider {
 		this.rand.setSeed((long)var1 * 341873128712L + (long)var2 * 132897987541L);
 		byte[] var3 = new byte[-Short.MIN_VALUE];
 		Chunk var4 = new Chunk(this.worldObj, var3, var1, var2);
+
+		// NaN seed: generate corrupted world (stone + floating water)
+		if(this.isNaNSeed()) {
+			this.generateNaNTerrain(var1, var2, var3);
+			var4.func_1024_c();
+			return var4;
+		}
+
 		this.biomesForGeneration = this.worldObj.getWorldChunkManager().loadBlockGeneratorData(this.biomesForGeneration, var1 * 16, var2 * 16, 16, 16);
 		double[] var5 = this.worldObj.getWorldChunkManager().temperature;
 		this.generateTerrain(var1, var2, var3, this.biomesForGeneration, var5);
@@ -202,6 +210,48 @@ public class ChunkProviderGenerate implements IChunkProvider {
 		this.field_902_u.func_867_a(this, this.worldObj, var1, var2, var3);
 		var4.func_1024_c();
 		return var4;
+	}
+
+	private boolean isNaNSeed() {
+		long seed = this.worldObj.getRandomSeed();
+		// "NaN" string hashCode = 78078
+		return seed == 78078L;
+	}
+
+	private void generateNaNTerrain(int chunkX, int chunkZ, byte[] blocks) {
+		Random nanRand = new Random((long)chunkX * 341873128712L + (long)chunkZ * 132897987541L + 78078L);
+
+		for(int x = 0; x < 16; ++x) {
+			for(int z = 0; z < 16; ++z) {
+				// Bedrock layer
+				blocks[(x * 16 + z) * 128 + 0] = (byte)Block.bedrock.blockID;
+
+				// Stone fill up to y=60
+				for(int y = 1; y < 60; ++y) {
+					blocks[(x * 16 + z) * 128 + y] = (byte)Block.stone.blockID;
+				}
+
+				// Flat surface with occasional gaps
+				if(nanRand.nextInt(20) != 0) {
+					blocks[(x * 16 + z) * 128 + 60] = (byte)Block.stone.blockID;
+				}
+
+				// Floating water blobs
+				if(nanRand.nextInt(80) == 0) {
+					int waterY = 70 + nanRand.nextInt(30);
+					blocks[(x * 16 + z) * 128 + waterY] = (byte)Block.waterStill.blockID;
+					if(waterY + 1 < 128) {
+						blocks[(x * 16 + z) * 128 + waterY + 1] = (byte)Block.waterStill.blockID;
+					}
+				}
+
+				// Occasional sponge blocks (NaN blocks)
+				if(nanRand.nextInt(200) == 0) {
+					int spongeY = 61 + nanRand.nextInt(5);
+					blocks[(x * 16 + z) * 128 + spongeY] = (byte)Block.sponge.blockID;
+				}
+			}
+		}
 	}
 
 	private double[] func_4061_a(double[] var1, int var2, int var3, int var4, int var5, int var6, int var7) {
