@@ -644,22 +644,44 @@ public class RenderGlobal implements IWorldAccess {
 			GL11.glTranslatef(var8, var16, var17);
 			GL11.glRotatef(0.0F, 0.0F, 0.0F, 1.0F);
 			GL11.glRotatef(this.worldObj.getCelestialAngle(var1) * 360.0F, 1.0F, 0.0F, 0.0F);
-			var11 = 30.0F;
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.renderEngine.getTexture("/terrain/sun.png"));
-			var14.startDrawingQuads();
-			var14.addVertexWithUV((double)(-var11), 100.0D, (double)(-var11), 0.0D, 0.0D);
-			var14.addVertexWithUV((double)var11, 100.0D, (double)(-var11), 1.0D, 0.0D);
-			var14.addVertexWithUV((double)var11, 100.0D, (double)var11, 1.0D, 1.0D);
-			var14.addVertexWithUV((double)(-var11), 100.0D, (double)var11, 0.0D, 1.0D);
+			// NaN: Glitchy geometric shapes instead of sun/moon
+			GL11.glDisable(GL11.GL_TEXTURE_2D);
+			long nanTime = System.currentTimeMillis();
+			Random nanRand = new Random(nanTime / 50L);
+			float jitterX = (nanRand.nextFloat() - 0.5F) * 8.0F;
+			float jitterY = (nanRand.nextFloat() - 0.5F) * 8.0F;
+
+			// Glitchy triangle where sun should be
+			var11 = 25.0F + nanRand.nextFloat() * 10.0F;
+			GL11.glColor4f(1.0F, 0.9F, 0.3F, var7 * 0.8F);
+			var14.startDrawing(GL11.GL_TRIANGLES);
+			var14.addVertex((double)(-var11 + jitterX), 100.0D, (double)(-var11 + jitterY));
+			var14.addVertex((double)(var11 + jitterX), 100.0D, (double)jitterY);
+			var14.addVertex((double)(jitterX), 100.0D, (double)(var11 + jitterY));
 			var14.draw();
-			var11 = 20.0F;
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.renderEngine.getTexture("/terrain/moon.png"));
-			var14.startDrawingQuads();
-			var14.addVertexWithUV((double)(-var11), -100.0D, (double)var11, 1.0D, 1.0D);
-			var14.addVertexWithUV((double)var11, -100.0D, (double)var11, 0.0D, 1.0D);
-			var14.addVertexWithUV((double)var11, -100.0D, (double)(-var11), 0.0D, 0.0D);
-			var14.addVertexWithUV((double)(-var11), -100.0D, (double)(-var11), 1.0D, 0.0D);
+
+			// Second inverted triangle
+			float j2x = (nanRand.nextFloat() - 0.5F) * 6.0F;
+			float j2y = (nanRand.nextFloat() - 0.5F) * 6.0F;
+			GL11.glColor4f(1.0F, 0.7F, 0.0F, var7 * 0.5F);
+			var14.startDrawing(GL11.GL_TRIANGLES);
+			var14.addVertex((double)(var11 * 0.7F + j2x), 100.0D, (double)(var11 * 0.7F + j2y));
+			var14.addVertex((double)(-var11 * 0.7F + j2x), 100.0D, (double)(j2y));
+			var14.addVertex((double)(j2x), 100.0D, (double)(-var11 * 0.7F + j2y));
 			var14.draw();
+
+			// Glitchy diamond where moon should be
+			var11 = 15.0F + nanRand.nextFloat() * 5.0F;
+			float mJitterX = (nanRand.nextFloat() - 0.5F) * 5.0F;
+			float mJitterY = (nanRand.nextFloat() - 0.5F) * 5.0F;
+			GL11.glColor4f(0.6F, 0.6F, 0.9F, var7 * 0.7F);
+			var14.startDrawingQuads();
+			var14.addVertex((double)(mJitterX), -100.0D + (double)var11, (double)(mJitterY));
+			var14.addVertex((double)(var11 + mJitterX), -100.0D, (double)(mJitterY));
+			var14.addVertex((double)(mJitterX), -100.0D - (double)var11, (double)(mJitterY));
+			var14.addVertex((double)(-var11 + mJitterX), -100.0D, (double)(mJitterY));
+			var14.draw();
+			GL11.glEnable(GL11.GL_TEXTURE_2D);
 			GL11.glDisable(GL11.GL_TEXTURE_2D);
 			var12 = this.worldObj.getStarBrightness(var1) * var7;
 			if(var12 > 0.0F) {

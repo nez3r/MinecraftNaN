@@ -48,6 +48,8 @@ public class EntityRenderer {
 	float fogColorBlue;
 	private float field_1382_n;
 	private float field_1381_o;
+	private int nanTickCounter = 0;
+	private float lightPulsePhase = 0.0F;
 
 	public EntityRenderer(Minecraft var1) {
 		this.mc = var1;
@@ -70,6 +72,8 @@ public class EntityRenderer {
 		float var3 = var1 * (1.0F - var2) + var2;
 		this.field_1381_o += (var3 - this.field_1381_o) * 0.1F;
 		++this.field_1386_j;
+		++this.nanTickCounter;
+		this.lightPulsePhase += 0.15F;
 		this.itemRenderer.updateEquippedItem();
 		this.addRainParticles();
 	}
@@ -381,6 +385,8 @@ public class EntityRenderer {
 
 			// VHS Effect
 			this.renderVHSEffect();
+			this.renderScreenDistortion();
+			this.renderFogEdgePixels();
 
 		}
 	}
@@ -786,6 +792,12 @@ public class EntityRenderer {
 			this.fogColorBlue = var15;
 		}
 
+		// NaN: Dark purple fog tint
+		float purpleMix = 0.35F;
+		this.fogColorRed = this.fogColorRed * (1.0F - purpleMix) + 0.08F * purpleMix;
+		this.fogColorGreen = this.fogColorGreen * (1.0F - purpleMix) + 0.0F * purpleMix;
+		this.fogColorBlue = this.fogColorBlue * (1.0F - purpleMix) + 0.18F * purpleMix;
+
 		GL11.glClearColor(this.fogColorRed, this.fogColorGreen, this.fogColorBlue, 0.0F);
 	}
 
@@ -860,6 +872,77 @@ public class EntityRenderer {
 		this.field_1392_d.put(var1).put(var2).put(var3).put(var4);
 		this.field_1392_d.flip();
 		return this.field_1392_d;
+	}
+
+	private void renderScreenDistortion() {
+		if(this.nanTickCounter % 400 < 20) {
+			ScaledResolution var1 = new ScaledResolution(this.mc.gameSettings, this.mc.displayWidth, this.mc.displayHeight);
+			GL11.glDisable(GL11.GL_DEPTH_TEST);
+			GL11.glDepthMask(false);
+			GL11.glEnable(GL11.GL_BLEND);
+			GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE_MINUS_SRC_COLOR);
+			GL11.glDisable(GL11.GL_ALPHA_TEST);
+			GL11.glDisable(GL11.GL_TEXTURE_2D);
+
+			Tessellator var2 = Tessellator.instance;
+			float intensity = (float)(this.nanTickCounter % 400 - 0) / 20.0F;
+			if(intensity > 0.5F) {
+				intensity = 1.0F - intensity;
+			}
+			intensity *= 0.6F;
+
+			var2.startDrawingQuads();
+			var2.setColorRGBA_F(intensity, intensity, intensity, 1.0F);
+			var2.addVertex(0.0D, 0.0D, -90.0D);
+			var2.addVertex((double)this.mc.displayWidth, 0.0D, -90.0D);
+			var2.addVertex((double)this.mc.displayWidth, (double)this.mc.displayHeight, -90.0D);
+			var2.addVertex(0.0D, (double)this.mc.displayHeight, -90.0D);
+			var2.draw();
+
+			GL11.glEnable(GL11.GL_TEXTURE_2D);
+			GL11.glEnable(GL11.GL_ALPHA_TEST);
+			GL11.glDepthMask(true);
+			GL11.glEnable(GL11.GL_DEPTH_TEST);
+			GL11.glDisable(GL11.GL_BLEND);
+		}
+	}
+
+	private void renderFogEdgePixels() {
+		if(this.random.nextInt(3) == 0) {
+			GL11.glDisable(GL11.GL_DEPTH_TEST);
+			GL11.glDepthMask(false);
+			GL11.glEnable(GL11.GL_BLEND);
+			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+			GL11.glDisable(GL11.GL_TEXTURE_2D);
+
+			Tessellator var1 = Tessellator.instance;
+			int edgeY = this.mc.displayHeight / 2;
+			for(int i = 0; i < 30; ++i) {
+				int px = this.random.nextInt(this.mc.displayWidth);
+				int py = this.random.nextInt(this.mc.displayHeight / 3) + this.mc.displayHeight / 3;
+				int size = this.random.nextInt(3) + 1;
+				int alpha = this.random.nextInt(120) + 30;
+
+				var1.startDrawingQuads();
+				var1.setColorRGBA_I(16777215, alpha);
+				var1.addVertex((double)px, (double)py, -90.0D);
+				var1.addVertex((double)(px + size), (double)py, -90.0D);
+				var1.addVertex((double)(px + size), (double)(py + size), -90.0D);
+				var1.addVertex((double)px, (double)(py + size), -90.0D);
+				var1.draw();
+			}
+
+			GL11.glEnable(GL11.GL_TEXTURE_2D);
+			GL11.glDepthMask(true);
+			GL11.glEnable(GL11.GL_DEPTH_TEST);
+			GL11.glDisable(GL11.GL_BLEND);
+		}
+	}
+
+	public float getLightPulse() {
+		float pulse = (float)Math.sin((double)this.lightPulsePhase);
+		float flicker = this.random.nextFloat() * 0.15F;
+		return 0.7F + pulse * 0.2F + flicker;
 	}
 
 	private void renderVHSEffect() {
