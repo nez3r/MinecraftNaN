@@ -1575,12 +1575,12 @@ public abstract class Minecraft implements Runnable {
 	}
 
 	private void toggleWeather() {
-		if(this.theWorld.getWorldInfo().func_27397_o()) {
-			this.theWorld.getWorldInfo().func_27394_b(false);
-			this.theWorld.getWorldInfo().func_27398_a(false);
+		if(this.theWorld.func_22144_v().func_27397_o()) {
+			this.theWorld.func_22144_v().func_27394_b(false);
+			this.theWorld.func_22144_v().func_27398_a(false);
 		} else {
-			this.theWorld.getWorldInfo().func_27394_b(true);
-			this.theWorld.getWorldInfo().func_27398_a(true);
+			this.theWorld.func_22144_v().func_27394_b(true);
+			this.theWorld.func_22144_v().func_27398_a(true);
 		}
 	}
 
