@@ -78,11 +78,11 @@ public class GuiGameOver extends GuiScreen {
 		}
 
 		if(this.retryClickCount > 0 && this.retryClickCount < 3) {
-			String msg = this.retryClickCount == 1 ? "§cRetry failed. Try again." : "§4Connection unstable...";
+			String msg = this.retryClickCount == 1 ? "§cRetry failed. Try again." : "§4DIE";
 			this.drawCenteredString(this.fontRenderer, msg, this.width / 2, this.height / 4 + 80, 0xFF4444);
 		}
 
-		this.drawCenteredString(this.fontRenderer, "Score: §e" + this.mc.thePlayer.getScore(), this.width / 2, this.height / 4 + 60, 16777215);
+		this.drawCenteredString(this.fontRenderer, "Score: §eNaN, " + this.mc.thePlayer.getScore(), this.width / 2, this.height / 4 + 60, 16777215);
 
 		super.drawScreen(var1, var2, var3);
 	}
