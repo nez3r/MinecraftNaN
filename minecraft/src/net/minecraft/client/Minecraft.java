@@ -1575,6 +1575,11 @@ public abstract class Minecraft implements Runnable {
 
                 ++this.currentMysteryEvent;
 
+                // Activate red fog for all mystery events
+                if(this.entityRenderer != null) {
+                        this.entityRenderer.setRedFog(true);
+                }
+
                 switch(this.currentMysteryEvent) {
                         case 1:
                                 // Strange whispers + Bedrock crosses above player
@@ -1704,21 +1709,18 @@ public abstract class Minecraft implements Runnable {
                 int playerY = (int)this.thePlayer.posY;
                 int playerZ = (int)this.thePlayer.posZ;
 
-                // Spawn netherrack circle around player with fire on top
-                for(int x = -3; x <= 3; ++x) {
-                        for(int z = -3; z <= 3; ++z) {
-                                if(x * x + z * z <= 9) { // Circle radius 3
-                                        int blockX = playerX + x;
-                                        int blockZ = playerZ + z;
+                // Calculate position 20 blocks behind the player
+                float yaw = this.thePlayer.rotationYaw;
+                double radYaw = Math.toRadians(yaw);
+                int spawnX = playerX - (int)(Math.sin(radYaw) * 20.0D);
+                int spawnZ = playerZ + (int)(Math.cos(radYaw) * 20.0D);
+                int spawnY = playerY - 1;
 
-                                        // Place netherrack at player's feet level
-                                        this.theWorld.setBlockWithNotify(blockX, playerY - 1, blockZ, Block.netherrack.blockID);
+                // Place single netherrack block
+                this.theWorld.setBlockWithNotify(spawnX, spawnY, spawnZ, Block.netherrack.blockID);
 
-                                        // Place fire on top
-                                        this.theWorld.setBlockWithNotify(blockX, playerY, blockZ, Block.fire.blockID);
-                                }
-                        }
-                }
+                // Place fire on top
+                this.theWorld.setBlockWithNotify(spawnX, spawnY + 1, spawnZ, Block.fire.blockID);
         }
 
         private void displayHerobrineError() {
@@ -1726,7 +1728,6 @@ public abstract class Minecraft implements Runnable {
                         this.thePlayer.addChatMessage("§4I will kill you and then resurrect you to kill you again.");
                 }
         }
-=======
 	private static Minecraft theMinecraft;
 	public PlayerController playerController;
 	private boolean fullscreen = false;
@@ -3256,6 +3257,11 @@ public abstract class Minecraft implements Runnable {
 
 		++this.currentMysteryEvent;
 
+		// Activate red fog for all mystery events
+		if(this.entityRenderer != null) {
+			this.entityRenderer.setRedFog(true);
+		}
+
 		switch(this.currentMysteryEvent) {
 			case 1:
 				// Strange whispers + Bedrock crosses above player
@@ -3306,13 +3312,10 @@ public abstract class Minecraft implements Runnable {
 				this.thePlayer.addChatMessage("§8NaN");
 				break;
 			case 10:
-				// Final event - starts the horror sequence
+				// Final event
 				this.thePlayer.addChatMessage("§0He is coming");
 				this.spawnBedrockCrosses();
 				this.spawnNetherrackWithFire();
-				// Start the final event sequence
-				this.finalEventActive = true;
-				this.finalEventStartTime = System.currentTimeMillis();
 				this.currentMysteryEvent = 0;
 				break;
 			default:
@@ -3388,21 +3391,18 @@ public abstract class Minecraft implements Runnable {
 		int playerY = (int)this.thePlayer.posY;
 		int playerZ = (int)this.thePlayer.posZ;
 
-		// Spawn netherrack circle around player with fire on top
-		for(int x = -3; x <= 3; ++x) {
-			for(int z = -3; z <= 3; ++z) {
-				if(x * x + z * z <= 9) { // Circle radius 3
-					int blockX = playerX + x;
-					int blockZ = playerZ + z;
+		// Calculate position 20 blocks behind the player
+		float yaw = this.thePlayer.rotationYaw;
+		double radYaw = Math.toRadians(yaw);
+		int spawnX = playerX - (int)(Math.sin(radYaw) * 20.0D);
+		int spawnZ = playerZ + (int)(Math.cos(radYaw) * 20.0D);
+		int spawnY = playerY - 1;
 
-					// Place netherrack at player's feet level
-					this.theWorld.setBlockWithNotify(blockX, playerY - 1, blockZ, Block.netherrack.blockID);
+		// Place single netherrack block
+		this.theWorld.setBlockWithNotify(spawnX, spawnY, spawnZ, Block.netherrack.blockID);
 
-					// Place fire on top
-					this.theWorld.setBlockWithNotify(blockX, playerY, blockZ, Block.fire.blockID);
-				}
-			}
-		}
+		// Place fire on top
+		this.theWorld.setBlockWithNotify(spawnX, spawnY + 1, spawnZ, Block.fire.blockID);
 	}
 
 	private void displayHerobrineError() {
