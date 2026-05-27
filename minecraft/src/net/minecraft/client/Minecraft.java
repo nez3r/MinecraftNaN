@@ -101,7 +101,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 
 public abstract class Minecraft implements Runnable {
-<<<<<<< HEAD
         private static Minecraft theMinecraft;
         public PlayerController playerController;
         private boolean fullscreen = false;
@@ -169,7 +168,24 @@ public abstract class Minecraft implements Runnable {
         private int originalBlockId = -1;
         private int blockMorphTimer = 0;
         private boolean nanBlockActive = false;
-
+        private long lastMysteryEventTime = 0L;
+        // Final event variables
+        private boolean finalEventActive = false;
+        private long finalEventStartTime = 0L;
+        private int finalEventChatSpamTimer = 0;
+        private int finalEventTeleportTimer = 0;
+        private int finalEventShakeIntensity = 0;
+        private String[] scaryMessages = new String[] {
+                "§4HE IS HERE", "§0RUN", "§cNO ESCAPE", "§4LOOK BEHIND YOU",
+                "§5DIE", "§8666", "§4NaN ERROR", "§cSYSTEM FAILURE",
+                "§0YOUR SOUL IS MINE", "§4GAME OVER", "§cFATAL EXCEPTION",
+                "§4REALITY COLLAPSING", "§8VOID", "§4DELETING...", "§cCORRUPTED"
+        };
+        private String[] randomTitles = new String[] {
+                "Minecraft NaN", "ERROR", "HELP ME", "666", "VOID",
+                "CORRUPTED", "DEAD", "NaN", "!!!", "RUN", "HE IS COMING",
+                "FATAL ERROR", "SYSTEM FAILURE", "0x00000000", "§4§lN̴A̴N̴"
+        };
         public Minecraft(Component var1, Canvas var2, MinecraftApplet var3, int var4, int var5, boolean var6) {
                 StatList.func_27360_a();
                 this.field_9235_U = var5;
@@ -1728,91 +1744,6 @@ public abstract class Minecraft implements Runnable {
                         this.thePlayer.addChatMessage("§4I will kill you and then resurrect you to kill you again.");
                 }
         }
-	private static Minecraft theMinecraft;
-	public PlayerController playerController;
-	private boolean fullscreen = false;
-	public int displayWidth;
-	public int displayHeight;
-	private OpenGlCapsChecker glCapabilities;
-	private Timer timer = new Timer(20.0F);
-	public World theWorld;
-	public RenderGlobal renderGlobal;
-	public EntityPlayerSP thePlayer;
-	public EntityLiving renderViewEntity;
-	public EffectRenderer effectRenderer;
-	public Session session = null;
-	public String minecraftUri;
-	public Canvas mcCanvas;
-	public boolean hideQuitButton = true;
-	public volatile boolean isWorldLoaded = false;
-	public RenderEngine renderEngine;
-	public FontRenderer fontRenderer;
-	public GuiScreen currentScreen = null;
-	public LoadingScreenRenderer loadingScreen = new LoadingScreenRenderer(this);
-	public EntityRenderer entityRenderer = new EntityRenderer(this);
-	private ThreadDownloadResources downloadResourcesThread;
-	private int ticksRan = 0;
-	private int field_6282_S = 0;
-	private int field_9236_T;
-	private int field_9235_U;
-	public GuiAchievement field_25002_t = new GuiAchievement(this);
-	public GuiIngame ingameGUI;
-	public boolean field_6307_v = false;
-	public ModelBiped field_9242_w = new ModelBiped(0.0F);
-	public MovingObjectPosition objectMouseOver = null;
-	public GameSettings gameSettings;
-	protected MinecraftApplet mcApplet;
-	public SoundManager sndManager = new SoundManager();
-	public MouseHelper mouseHelper;
-	public TexturePackList texturePackList;
-	private File mcDataDir;
-	private ISaveFormat saveLoader;
-	public static long[] frameTimes = new long[512];
-	public static long[] tickTimes = new long[512];
-	public static int numRecordedFrameTimes = 0;
-	public StatFileWriter field_25001_G;
-	private String serverName;
-	private int serverPort;
-	private TextureWaterFX textureWaterFX = new TextureWaterFX();
-	private TextureLavaFX textureLavaFX = new TextureLavaFX();
-	private static File minecraftDir = null;
-	public volatile boolean running = true;
-	public String debug = "";
-	boolean isTakingScreenshot = false;
-	long prevFrameTime = -1L;
-	public boolean inGameHasFocus = false;
-	private int field_6302_aa = 0;
-	public boolean isRaining = false;
-	long systemTime = System.currentTimeMillis();
-	private int field_6300_ab = 0;
-	private long gameStartTime = 0L;
-	private boolean herobrineErrorShown = false;
-	private int currentMysteryEvent = 0;
-	private Random random = new Random();
-	private int nanTickCounter = 0;
-	private int inventoryGlitchTimer = 0;
-	private int glitchedSlot = -1;
-	private int originalBlockId = -1;
-	private int blockMorphTimer = 0;
-	private boolean nanBlockActive = false;
-	private long lastMysteryEventTime = 0L;
-	// Final event variables
-	private boolean finalEventActive = false;
-	private long finalEventStartTime = 0L;
-	private int finalEventChatSpamTimer = 0;
-	private int finalEventTeleportTimer = 0;
-	private int finalEventShakeIntensity = 0;
-	private String[] scaryMessages = new String[] {
-		"§4HE IS HERE", "§0RUN", "§cNO ESCAPE", "§4LOOK BEHIND YOU", 
-		"§5DIE", "§8666", "§4NaN ERROR", "§cSYSTEM FAILURE",
-		"§0YOUR SOUL IS MINE", "§4GAME OVER", "§cFATAL EXCEPTION",
-		"§4REALITY COLLAPSING", "§8VOID", "§4DELETING...", "§cCORRUPTED"
-	};
-	private String[] randomTitles = new String[] {
-		"Minecraft NaN", "ERROR", "HELP ME", "666", "VOID", 
-		"CORRUPTED", "DEAD", "NaN", "!!!", "RUN", "HE IS COMING",
-		"FATAL ERROR", "SYSTEM FAILURE", "0x00000000", "§4§lN̴A̴N̴"
-	};
 
 	public Minecraft(Component var1, Canvas var2, MinecraftApplet var3, int var4, int var5, boolean var6) {
 		StatList.func_27360_a();
@@ -3312,11 +3243,12 @@ public abstract class Minecraft implements Runnable {
 				this.thePlayer.addChatMessage("§8NaN");
 				break;
 			case 10:
-				// Final event
+				// Final event - activate all horror mechanics
+				this.finalEventActive = true;
+				this.finalEventStartTime = System.currentTimeMillis();
 				this.thePlayer.addChatMessage("§0He is coming");
 				this.spawnBedrockCrosses();
 				this.spawnNetherrackWithFire();
-				this.currentMysteryEvent = 0;
 				break;
 			default:
 				this.currentMysteryEvent = 0;
@@ -3325,91 +3257,6 @@ public abstract class Minecraft implements Runnable {
 		}
 	}
 
-	private void vanishGroundPatch() {
-		int px = (int)this.thePlayer.posX;
-		int py = (int)this.thePlayer.posY - 1;
-		int pz = (int)this.thePlayer.posZ;
-
-		for(int x = -2; x <= 2; ++x) {
-			for(int z = -2; z <= 2; ++z) {
-				if(this.random.nextInt(3) != 0) {
-					this.theWorld.setBlockWithNotify(px + x, py, pz + z, 0);
-				}
-			}
-		}
-	}
-
-	private void spawnNaNBlocks() {
-		int px = (int)this.thePlayer.posX;
-		int py = (int)this.thePlayer.posY;
-		int pz = (int)this.thePlayer.posZ;
-
-		for(int i = 0; i < 5; ++i) {
-			int ox = this.random.nextInt(10) - 5;
-			int oz = this.random.nextInt(10) - 5;
-			this.theWorld.setBlockWithNotify(px + ox, py - 1, pz + oz, Block.sponge.blockID);
-		}
-	}
-
-	private void spawnBedrockCrosses() {
-		int playerX = (int)this.thePlayer.posX;
-		int playerZ = (int)this.thePlayer.posZ;
-
-		// Spawn 3-5 bedrock crosses at Y=90-100
-		int numCrosses = 3 + this.random.nextInt(3);
-
-		for(int i = 0; i < numCrosses; ++i) {
-			int offsetX = this.random.nextInt(40) - 20;
-			int offsetZ = this.random.nextInt(40) - 20;
-			int y = 90 + this.random.nextInt(11);
-			int x = playerX + offsetX;
-			int z = playerZ + offsetZ;
-
-			// Create cross shape with bedrock
-			this.theWorld.setBlockWithNotify(x, y, z, Block.bedrock.blockID); // Center
-			this.theWorld.setBlockWithNotify(x + 1, y, z, Block.bedrock.blockID); // Right
-			this.theWorld.setBlockWithNotify(x - 1, y, z, Block.bedrock.blockID); // Left
-			this.theWorld.setBlockWithNotify(x, y, z + 1, Block.bedrock.blockID); // Front
-			this.theWorld.setBlockWithNotify(x, y, z - 1, Block.bedrock.blockID); // Back
-			this.theWorld.setBlockWithNotify(x, y + 1, z, Block.bedrock.blockID); // Top
-			this.theWorld.setBlockWithNotify(x, y - 1, z, Block.bedrock.blockID); // Bottom
-		}
-	}
-
-	private void toggleWeather() {
-		if(this.theWorld.func_22144_v().func_27397_o()) {
-			this.theWorld.func_22144_v().func_27394_b(false);
-			this.theWorld.func_22144_v().func_27398_a(false);
-		} else {
-			this.theWorld.func_22144_v().func_27394_b(true);
-			this.theWorld.func_22144_v().func_27398_a(true);
-		}
-	}
-
-	private void spawnNetherrackWithFire() {
-		int playerX = (int)this.thePlayer.posX;
-		int playerY = (int)this.thePlayer.posY;
-		int playerZ = (int)this.thePlayer.posZ;
-
-		// Calculate position 20 blocks behind the player
-		float yaw = this.thePlayer.rotationYaw;
-		double radYaw = Math.toRadians(yaw);
-		int spawnX = playerX - (int)(Math.sin(radYaw) * 20.0D);
-		int spawnZ = playerZ + (int)(Math.cos(radYaw) * 20.0D);
-		int spawnY = playerY - 1;
-
-		// Place single netherrack block
-		this.theWorld.setBlockWithNotify(spawnX, spawnY, spawnZ, Block.netherrack.blockID);
-
-		// Place fire on top
-		this.theWorld.setBlockWithNotify(spawnX, spawnY + 1, spawnZ, Block.fire.blockID);
-	}
-
-	private void displayHerobrineError() {
-		if(this.thePlayer != null) {
-			this.thePlayer.addChatMessage("§4I will kill you and then resurrect you to kill you again.");
-		}
-	}
 
 	private void updateFinalEvent() {
 		long elapsed = System.currentTimeMillis() - this.finalEventStartTime;
