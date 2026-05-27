@@ -50,6 +50,8 @@ public class EntityRenderer {
 	private float field_1381_o;
 	private int nanTickCounter = 0;
 	private float lightPulsePhase = 0.0F;
+	private boolean redFogActive = false;
+	private int redFogTimer = 0;
 
 	public EntityRenderer(Minecraft var1) {
 		this.mc = var1;
@@ -74,8 +76,25 @@ public class EntityRenderer {
 		++this.field_1386_j;
 		++this.nanTickCounter;
 		this.lightPulsePhase += 0.15F;
+		
+		// Update red fog timer for mystery events
+		if(this.redFogActive) {
+			++this.redFogTimer;
+			if(this.redFogTimer >= 600) { // Red fog lasts ~30 seconds (600 ticks at 20tps)
+				this.redFogActive = false;
+				this.redFogTimer = 0;
+			}
+		}
+		
 		this.itemRenderer.updateEquippedItem();
 		this.addRainParticles();
+	}
+	
+	public void setRedFog(boolean active) {
+		this.redFogActive = active;
+		if(active) {
+			this.redFogTimer = 0;
+		}
 	}
 
 	public void getMouseOver(float var1) {
@@ -797,6 +816,14 @@ public class EntityRenderer {
 		this.fogColorRed = this.fogColorRed * (1.0F - purpleMix) + 0.08F * purpleMix;
 		this.fogColorGreen = this.fogColorGreen * (1.0F - purpleMix) + 0.0F * purpleMix;
 		this.fogColorBlue = this.fogColorBlue * (1.0F - purpleMix) + 0.18F * purpleMix;
+		
+		// Red fog override for mystery events
+		if(this.redFogActive) {
+			float redIntensity = 0.7F + (float)Math.sin(this.lightPulsePhase) * 0.2F;
+			this.fogColorRed = redIntensity;
+			this.fogColorGreen = 0.1F;
+			this.fogColorBlue = 0.1F;
+		}
 
 		GL11.glClearColor(this.fogColorRed, this.fogColorGreen, this.fogColorBlue, 0.0F);
 	}
