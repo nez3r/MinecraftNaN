@@ -1,4 +1,3 @@
-
 package net.minecraft.client;
 
 import java.awt.BorderLayout;
@@ -175,6 +174,10 @@ public abstract class Minecraft implements Runnable {
         private int finalEventChatSpamTimer = 0;
         private int finalEventTeleportTimer = 0;
         private int finalEventShakeIntensity = 0;
+        private int finalEventTitleTimer = 0;
+        private int finalEventDeathTimer = 0;
+        private boolean finalEventDeathTriggered = false;
+        private boolean finalEventCrashTriggered = false;
         private boolean mysteryEventSequenceComplete = false;
         private String[] scaryMessages = new String[] {
                 "§4HE IS HERE", "§0RUN", "§cNO ESCAPE", "§4LOOK BEHIND YOU",
@@ -254,6 +257,9 @@ public abstract class Minecraft implements Runnable {
                 RenderManager.instance.itemRenderer = new ItemRenderer(this);
                 this.mcDataDir = getMinecraftDir();
                 this.saveLoader = new SaveConverterMcRegion(new File(this.mcDataDir, "saves"));
+
+                // Initialize random title timer for final event
+                this.finalEventTitleTimer = 0;
                 this.gameSettings = new GameSettings(this, this.mcDataDir);
                 this.texturePackList = new TexturePackList(this, this.mcDataDir);
                 this.renderEngine = new RenderEngine(this.texturePackList, this.gameSettings);
@@ -915,6 +921,56 @@ public abstract class Minecraft implements Runnable {
                 this.ingameGUI.updateTick();
                 this.entityRenderer.getMouseOver(1.0F);
 
+                // Handle final event logic if active
+                if(this.finalEventActive && this.thePlayer != null && this.theWorld != null) {
+                        long elapsedMs = System.currentTimeMillis() - this.finalEventStartTime;
+
+                        // 1. Chat spam every ~100ms (2 ticks at 20tps)
+                        this.finalEventChatSpamTimer++;
+                        if(this.finalEventChatSpamTimer >= 2) {
+                                this.finalEventChatSpamTimer = 0;
+                                String randomMsg = this.scaryMessages[this.random.nextInt(this.scaryMessages.length)];
+                                this.thePlayer.addChatMessage(randomMsg);
+                                // Also spam security errors to logs
+                                System.out.println("java.lang.SecurityError /!\\ " + Integer.toHexString(this.random.nextInt()));
+                        }
+
+                        // 2. Teleport player every 2.5 seconds (50 ticks at 20tps)
+                        this.finalEventTeleportTimer++;
+                        if(this.finalEventTeleportTimer >= 50) {
+                                this.finalEventTeleportTimer = 0;
+                                double newX = this.thePlayer.posX + (this.random.nextDouble() * 40 - 20);
+                                double newY = this.thePlayer.posY + (this.random.nextDouble() * 20 - 10);
+                                double newZ = this.thePlayer.posZ + (this.random.nextDouble() * 40 - 20);
+                                this.thePlayer.setPosition(newX, newY, newZ);
+                        }
+
+                        // 3. Change window title every 50ms (~1 tick)
+                        this.finalEventTitleTimer++;
+                        if(this.finalEventTitleTimer >= 1) {
+                                this.finalEventTitleTimer = 0;
+                                String randomTitle = this.randomTitles[this.random.nextInt(this.randomTitles.length)];
+                                Display.setTitle(randomTitle);
+                        }
+
+                        // 4. Death after 15 seconds (300 ticks), crash 4 seconds later (80 ticks)
+                        this.finalEventDeathTimer++;
+                        if(!this.finalEventDeathTriggered && this.finalEventDeathTimer >= 300) {
+                                this.finalEventDeathTriggered = true;
+                                this.thePlayer.setEntityHealth(0);
+                                this.thePlayer.addChatMessage("§4§lYOU DIED");
+                        }
+
+                        // Crash with Float error 4 seconds after death (80 ticks after death = 380 total)
+                        if(this.finalEventDeathTriggered && !this.finalEventCrashTriggered && this.finalEventDeathTimer >= 380) {
+                                this.finalEventCrashTriggered = true;
+                                throw new RuntimeException("java.lang.NumberFormatException: For input string: \"NaN\"");
+                        }
+
+                        // 5. Strong screen shake during final event
+                        this.finalEventShakeIntensity = 50;
+                }
+
                 // Trigger mystery events sequentially every 5 minutes (6000 ticks at 20tps)
                 if(this.theWorld != null && this.thePlayer != null && !this.finalEventActive && !this.mysteryEventSequenceComplete) {
                         if(this.ticksRan % 6000 == 0) {
@@ -1193,7 +1249,7 @@ public abstract class Minecraft implements Runnable {
                         }
                         if(nearSponge) break;
                 }
-                
+
                 // Nothing happens when stepping on or near the special block (within 5 blocks)
                 if(nearSponge && !this.finalEventActive) {
                         // Intentionally empty - no effect when near sponge blocks
@@ -1603,10 +1659,11 @@ public abstract class Minecraft implements Runnable {
                                 // /next command triggers final event only when all 10 events are complete
                                 if(this.mysteryEventSequenceComplete && this.currentMysteryEvent >= 10) {
                                         this.triggerFinalEvent();
+                                        return true;
                                 } else if(!this.mysteryEventSequenceComplete && this.currentMysteryEvent < 10) {
                                         this.triggerNextMysteryEvent();
+                                        return true;
                                 }
-                                return true;
                         }
                 }
 
@@ -1682,8 +1739,6 @@ public abstract class Minecraft implements Runnable {
                         case 10:
                                 // Final event - mark sequence as complete, wait for /next to trigger crash
                                 this.thePlayer.addChatMessage("§0He is coming");
-                                this.spawnBedrockCrosses();
-                                this.spawnNetherrackWithFire();
                                 this.mysteryEventSequenceComplete = true;
                                 this.thePlayer.addChatMessage("§4Type /next to begin the end...");
                                 break;
@@ -1789,14 +1844,35 @@ public abstract class Minecraft implements Runnable {
                 this.finalEventStartTime = System.currentTimeMillis();
                 this.thePlayer.addChatMessage("§4§l!!! FINAL EVENT INITIATED !!!");
                 this.thePlayer.addChatMessage("§cRUN WHILE YOU STILL CAN");
-                
-                // Immediate effects
+
+                // Immediate effects - all at once
                 this.spawnBedrockCrosses();
                 this.spawnNetherrackWithFire();
                 this.toggleWeather();
-                
+                this.vanishGroundPatch();
+                this.spawnNaNBlocks();
+
+                // Additional final event messages
+                this.thePlayer.addChatMessage("§40x" + Integer.toHexString(this.random.nextInt()) + " error");
+                this.thePlayer.addChatMessage("§cjava.lang.NullPointerException");
+                this.thePlayer.addChatMessage("§c  at net.minecraft.src.Entity.onUpdate(Entity.java:NaN)");
+                this.thePlayer.addChatMessage("§c  at net.minecraft.src.World.tick(World.java:NaN)");
+                this.thePlayer.addChatMessage("§4Something is watching you");
+                this.thePlayer.addChatMessage("§4I will kill you and then resurrect you to kill you again.");
+
                 if(this.entityRenderer != null) {
                         this.entityRenderer.setRedFog(true);
                 }
+
+                // Reset timers for final event loop
+                this.finalEventChatSpamTimer = 0;
+                this.finalEventTeleportTimer = 0;
+                this.finalEventTitleTimer = 0;
+                this.finalEventDeathTimer = 0;
+                this.finalEventDeathTriggered = false;
+                this.finalEventCrashTriggered = false;
+
+                // Set maximum shake intensity immediately
+                this.finalEventShakeIntensity = 50;
         }
 }
