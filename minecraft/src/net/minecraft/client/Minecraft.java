@@ -160,7 +160,7 @@ public abstract class Minecraft implements Runnable {
         private long gameStartTime = 0L;
         private boolean herobrineErrorShown = false;
         private int currentMysteryEvent = 0;
-        Random random = new Random();
+        public Random random = new Random();
         private int nanTickCounter = 0;
         private int inventoryGlitchTimer = 0;
         private int glitchedSlot = -1;
@@ -169,8 +169,8 @@ public abstract class Minecraft implements Runnable {
         private boolean nanBlockActive = false;
         private long lastMysteryEventTime = 0L;
         // Final event variables
-        boolean finalEventActive = false;
-        long finalEventStartTime = 0L;
+        public boolean finalEventActive = false;
+        public long finalEventStartTime = 0L;
         private int finalEventChatSpamTimer = 0;
         private int finalEventTeleportTimer = 0;
         private int finalEventShakeIntensity = 0;
@@ -179,7 +179,7 @@ public abstract class Minecraft implements Runnable {
         private boolean finalEventDeathTriggered = false;
         private boolean finalEventCrashTriggered = false;
         private boolean mysteryEventSequenceComplete = false;
-        String[] scaryMessages = new String[] {
+        public String[] scaryMessages = new String[] {
                 "§4HE IS HERE", "§0RUN", "§cNO ESCAPE", "§4LOOK BEHIND YOU",
                 "§5DIE", "§8666", "§4NaN ERROR", "§cSYSTEM FAILURE",
                 "§0YOUR SOUL IS MINE", "§4GAME OVER", "§cFATAL EXCEPTION",
