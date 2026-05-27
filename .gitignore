@@ -1,33 +1,46 @@
-```
-# Compiled Java classes
-*.class
+# Скрипты автоматизации и архиваторы
+7z.exe
+7z.dll
 
-# Build directories
+# Исполняемые файлы и утилиты RetroMCP
+RetroMCP-Java-CLI.jar
+RetroMCP-Java-GUI.jar
+
+# Папки сборщика, библиотек и самого сервера
 build/
-dist/
-target/
-
-# Dependencies
-lib/
-libs/
+doc/
 jars/
+libraries/
+freeminecraft/
 
-# IDE files
-.idea/
-*.iml
-*.ipr
-*.iws
-.vscode/
+# Клод и AI-настройки
+.claude/
+CLAUDE.md
+doc/
 
-# Logs
-*.log
+# Настройки среды разработки (IDE) в корне и подпапках
+#.idea/
+#.vscode/
+#*.iml
+#.classpath
+#.project
+#.settings/
+#.windsurf/
 
-# Temporary files
-*.tmp
-*.temp
-*.backup
+# Папки компиляции внутри /minecraft
+minecraft/bin/
+minecraft/reobf/
+minecraft/md5/
+minecraft/jars/
+minecraft/output/
 
-# System files
-.DS_Store
-Thumbs.db
-```
+minecraft_server/
+minecraft_server/bin/
+minecraft_server/reobf/
+minecraft_server/md5/
+minecraft_server/jars/
+minecraft_server/output/
+
+# Рабочие файлы игры (карты, логи, конфиги модов)
+minecraft/game/
+minecraft_server/game
