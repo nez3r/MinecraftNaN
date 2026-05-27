@@ -990,7 +990,7 @@ public class EntityRenderer {
                 return 0.7F + pulse * 0.2F + flicker;
         }
 
-        private void renderVHSEffect() {
+        public void renderVHSEffect() {
                 ScaledResolution var1 = new ScaledResolution(this.mc.gameSettings, this.mc.displayWidth, this.mc.displayHeight);
                 int var2 = var1.getScaledWidth();
                 int var3 = var1.getScaledHeight();
