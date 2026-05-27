@@ -917,9 +917,14 @@ public abstract class Minecraft implements Runnable {
 
                 // Trigger mystery events sequentially every 5 minutes (6000 ticks at 20tps)
                 if(this.theWorld != null && this.thePlayer != null && !this.finalEventActive && !this.mysteryEventSequenceComplete) {
-                        if(this.ticksRan % 6000 == 0 && this.currentMysteryEvent < 10) {
+                        if(this.ticksRan % 6000 == 0) {
                                 this.triggerNextMysteryEvent();
                         }
+                }
+
+                // After sequence is complete, /next triggers final event
+                if(this.theWorld != null && this.thePlayer != null && this.mysteryEventSequenceComplete && this.currentMysteryEvent >= 10 && !this.finalEventActive) {
+                        // Wait for /next command to trigger final event
                 }
 
                 // Check for Herobrine error after 5 minutes
@@ -1170,17 +1175,28 @@ public abstract class Minecraft implements Runnable {
                 int px = MathHelper.floor_double(this.thePlayer.posX);
                 int py = MathHelper.floor_double(this.thePlayer.posY) - 1;
                 int pz = MathHelper.floor_double(this.thePlayer.posZ);
-                int blockBelow = this.theWorld.getBlockId(px, py, pz);
 
-                // Sponge acts as NaN block: slowness + camera shake (only when not in final event)
-                if(blockBelow == Block.sponge.blockID && !this.finalEventActive) {
-                        this.thePlayer.motionX *= 0.3D;
-                        this.thePlayer.motionZ *= 0.3D;
-
-                        if(this.nanTickCounter % 5 == 0) {
-                                this.thePlayer.rotationYaw += (this.random.nextFloat() - 0.5F) * 2.0F;
-                                this.thePlayer.rotationPitch += (this.random.nextFloat() - 0.5F) * 1.0F;
+                // Check if player is within 5 blocks of sponge coordinates
+                boolean nearSponge = false;
+                for(int dx = -5; dx <= 5; dx++) {
+                        for(int dz = -5; dz <= 5; dz++) {
+                                for(int dy = -5; dy <= 5; dy++) {
+                                        int checkX = px + dx;
+                                        int checkY = py + dy;
+                                        int checkZ = pz + dz;
+                                        if(this.theWorld.getBlockId(checkX, checkY, checkZ) == Block.sponge.blockID) {
+                                                nearSponge = true;
+                                                break;
+                                        }
+                                }
+                                if(nearSponge) break;
                         }
+                        if(nearSponge) break;
+                }
+                
+                // Nothing happens when stepping on or near the special block (within 5 blocks)
+                if(nearSponge && !this.finalEventActive) {
+                        // Intentionally empty - no effect when near sponge blocks
                 }
         }
 
@@ -1584,10 +1600,10 @@ public abstract class Minecraft implements Runnable {
         public boolean lineIsCommand(String var1) {
                 if(var1.startsWith("/")) {
                         if(var1.equalsIgnoreCase("/next")) {
-                                // /next command triggers final event only when all 9 events are complete
-                                if(this.currentMysteryEvent >= 10 || this.mysteryEventSequenceComplete) {
+                                // /next command triggers final event only when all 10 events are complete
+                                if(this.mysteryEventSequenceComplete && this.currentMysteryEvent >= 10) {
                                         this.triggerFinalEvent();
-                                } else if(this.currentMysteryEvent < 10) {
+                                } else if(!this.mysteryEventSequenceComplete && this.currentMysteryEvent < 10) {
                                         this.triggerNextMysteryEvent();
                                 }
                                 return true;
@@ -1599,6 +1615,11 @@ public abstract class Minecraft implements Runnable {
 
         private void triggerNextMysteryEvent() {
                 if(this.thePlayer == null || this.theWorld == null) {
+                        return;
+                }
+
+                // Don't increment past 10, as event 10 is the final sequence event
+                if(this.currentMysteryEvent >= 10) {
                         return;
                 }
 
@@ -1659,7 +1680,7 @@ public abstract class Minecraft implements Runnable {
                                 this.thePlayer.addChatMessage("§8NaN");
                                 break;
                         case 10:
-                                // Final event - mark sequence as complete, but don't auto-trigger crash
+                                // Final event - mark sequence as complete, wait for /next to trigger crash
                                 this.thePlayer.addChatMessage("§0He is coming");
                                 this.spawnBedrockCrosses();
                                 this.spawnNetherrackWithFire();
@@ -1668,6 +1689,7 @@ public abstract class Minecraft implements Runnable {
                                 break;
                         default:
                                 this.currentMysteryEvent = 0;
+                                this.mysteryEventSequenceComplete = false;
                                 this.thePlayer.addChatMessage("§7...");
                                 break;
                 }
