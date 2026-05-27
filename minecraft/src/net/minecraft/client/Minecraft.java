@@ -160,7 +160,7 @@ public abstract class Minecraft implements Runnable {
         private long gameStartTime = 0L;
         private boolean herobrineErrorShown = false;
         private int currentMysteryEvent = 0;
-        private Random random = new Random();
+        Random random = new Random();
         private int nanTickCounter = 0;
         private int inventoryGlitchTimer = 0;
         private int glitchedSlot = -1;
@@ -169,8 +169,8 @@ public abstract class Minecraft implements Runnable {
         private boolean nanBlockActive = false;
         private long lastMysteryEventTime = 0L;
         // Final event variables
-        private boolean finalEventActive = false;
-        private long finalEventStartTime = 0L;
+        boolean finalEventActive = false;
+        long finalEventStartTime = 0L;
         private int finalEventChatSpamTimer = 0;
         private int finalEventTeleportTimer = 0;
         private int finalEventShakeIntensity = 0;
@@ -179,7 +179,7 @@ public abstract class Minecraft implements Runnable {
         private boolean finalEventDeathTriggered = false;
         private boolean finalEventCrashTriggered = false;
         private boolean mysteryEventSequenceComplete = false;
-        private String[] scaryMessages = new String[] {
+        String[] scaryMessages = new String[] {
                 "§4HE IS HERE", "§0RUN", "§cNO ESCAPE", "§4LOOK BEHIND YOU",
                 "§5DIE", "§8666", "§4NaN ERROR", "§cSYSTEM FAILURE",
                 "§0YOUR SOUL IS MINE", "§4GAME OVER", "§cFATAL EXCEPTION",
@@ -957,7 +957,7 @@ public abstract class Minecraft implements Runnable {
                         this.finalEventDeathTimer++;
                         if(!this.finalEventDeathTriggered && this.finalEventDeathTimer >= 300) {
                                 this.finalEventDeathTriggered = true;
-                                this.thePlayer.setEntityHealth(0);
+                                this.thePlayer.setHealth(0);
                                 this.thePlayer.addChatMessage("§4§lYOU DIED");
                         }
 
