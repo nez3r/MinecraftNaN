@@ -26,6 +26,10 @@ public class GuiScreen extends Gui {
 			var5.drawButton(this.mc, var1, var2);
 		}
 
+		// Apply VHS effect to all GUI screens (menus, inventory, etc.)
+		if(this.mc.entityRenderer != null) {
+			this.mc.entityRenderer.renderVHSEffect();
+		}
 	}
 
 	protected void keyTyped(char var1, int var2) {

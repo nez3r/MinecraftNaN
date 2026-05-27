@@ -469,4 +469,11 @@ public class GuiIngame extends Gui {
         public boolean isSilenceActive() {
                 return this.isSilenceActive;
         }
+
+        public void renderVHSEffectOnHUD() {
+                // Apply VHS effect to the HUD overlay
+                if(this.mc.entityRenderer != null) {
+                        this.mc.entityRenderer.renderVHSEffect();
+                }
+        }
 }
