@@ -141,7 +141,7 @@ public class GuiMainMenu extends GuiScreen {
 
 		String titleStr = this.titleGlitch ? "Minecraft N§ka§rN" : "Minecraft NaN";
 		this.drawString(this.fontRenderer, titleStr, 2, 2, 5263440);
-		String var9 = "Copyright Mojang AB. Do not distribute.";
+		String var9 = "Copy0right 000 AB. Do not distribute.";
 		this.drawString(this.fontRenderer, var9, this.width - this.fontRenderer.getStringWidth(var9) - 2, this.height - 10, 16777215);
 
 		// Random glitch text at bottom
