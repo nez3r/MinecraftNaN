@@ -1,38 +1,54 @@
-# Скрипты автоматизации и архиваторы s
-gitpub.bat
-7z.exe
-7z.dll
-
-# Исполняемые файлы и утилиты RetroMCP
-RetroMCP-Java-CLI.jar
-RetroMCP-Java-GUI.jar
-
-# Папки сборщика, библиотек и самого сервера
+```
+# Compiled and build artifacts
+*.pyc
+__pycache__/
+*.class
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.out
 build/
-conf/
-doc/
-jars/
-libraries/
-minecraft_server/
-freeminecraft/
+dist/
+target/
 
-# Клод и AI-настройки
-.claude/
-CLAUDE.mds
+# Dependencies
+node_modules/
+venv/
+.venv/
+.env
+.env.local
+.env.*
 
-# Настройки среды разработки (IDE) в корне и подпапках
-.idea/
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Editors
 .vscode/
-*.iml
-.classpath
-.project
-.settings/
+.idea/
+*.swp
+*.swo
 
-# Папки компиляции внутри /minecraft
-minecraft/bin/
-minecraft/reobf/
-minecraft/md5/
-minecraft/jars/
+# System files
+.DS_Store
+Thumbs.db
 
-# Рабочие файлы игры (карты, логи, конфиги модов)
-minecraft/game/
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Gradle
+.gradle/
+
+# MyPy
+.mypy_cache/
+
+# Pytest
+.pytest_cache/
+```
