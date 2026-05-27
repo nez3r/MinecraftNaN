@@ -48,6 +48,8 @@ public class EntityRenderer {
 	float fogColorBlue;
 	private float field_1382_n;
 	private float field_1381_o;
+	private long vhsStartTime = System.currentTimeMillis();
+	private float vhsIntensity = 1.0F;
 
 	public EntityRenderer(Minecraft var1) {
 		this.mc = var1;
@@ -70,6 +72,11 @@ public class EntityRenderer {
 		float var3 = var1 * (1.0F - var2) + var2;
 		this.field_1381_o += (var3 - this.field_1381_o) * 0.1F;
 		++this.field_1386_j;
+
+		// Update VHS intensity - increases every 90 seconds
+		long elapsed = System.currentTimeMillis() - this.vhsStartTime;
+		this.vhsIntensity = 1.0F + (float)(elapsed / 90000L);
+
 		this.itemRenderer.updateEquippedItem();
 		this.addRainParticles();
 	}
@@ -877,10 +884,12 @@ public class EntityRenderer {
 		Tessellator var4 = Tessellator.instance;
 		long var5 = System.currentTimeMillis();
 
-		// Scanlines
+		// Scanlines - intensity increases over time
+		int scanlineAlpha = (int)(30.0F * this.vhsIntensity);
+		if(scanlineAlpha > 255) scanlineAlpha = 255;
 		for(int var7 = 0; var7 < this.mc.displayHeight; var7 += 2) {
 			var4.startDrawingQuads();
-			var4.setColorRGBA_I(0, 30);
+			var4.setColorRGBA_I(0, scanlineAlpha);
 			var4.addVertex(0.0D, (double)var7, -90.0D);
 			var4.addVertex((double)this.mc.displayWidth, (double)var7, -90.0D);
 			var4.addVertex((double)this.mc.displayWidth, (double)(var7 + 1), -90.0D);
@@ -888,8 +897,9 @@ public class EntityRenderer {
 			var4.draw();
 		}
 
-		// Random noise
-		for(int var8 = 0; var8 < 50; ++var8) {
+		// Random noise - more noise as intensity increases
+		int noiseCount = (int)(50.0F * this.vhsIntensity);
+		for(int var8 = 0; var8 < noiseCount; ++var8) {
 			int var9 = this.random.nextInt(this.mc.displayWidth);
 			int var10 = this.random.nextInt(this.mc.displayHeight);
 			int var11 = this.random.nextInt(20) + 5;
@@ -905,8 +915,9 @@ public class EntityRenderer {
 			var4.draw();
 		}
 
-		// Horizontal glitch lines
-		if(this.random.nextInt(10) < 3) {
+		// Horizontal glitch lines - more frequent as intensity increases
+		int glitchChance = (int)(3.0F * this.vhsIntensity);
+		if(this.random.nextInt(10) < glitchChance) {
 			int var14 = this.random.nextInt(this.mc.displayHeight);
 			int var15 = this.random.nextInt(5) + 2;
 			int var16 = this.random.nextInt(150) + 50;
@@ -920,9 +931,11 @@ public class EntityRenderer {
 			var4.draw();
 		}
 
-		// Vignette effect
+		// Vignette effect - stronger as intensity increases
+		int vignetteAlpha = (int)(100.0F * this.vhsIntensity);
+		if(vignetteAlpha > 255) vignetteAlpha = 255;
 		var4.startDrawingQuads();
-		var4.setColorRGBA_I(0, 100);
+		var4.setColorRGBA_I(0, vignetteAlpha);
 		var4.addVertex(0.0D, 0.0D, -90.0D);
 		var4.addVertex((double)this.mc.displayWidth, 0.0D, -90.0D);
 		var4.setColorRGBA_I(0, 0);
@@ -934,13 +947,14 @@ public class EntityRenderer {
 		var4.setColorRGBA_I(0, 0);
 		var4.addVertex(0.0D, (double)(this.mc.displayHeight * 3 / 4), -90.0D);
 		var4.addVertex((double)this.mc.displayWidth, (double)(this.mc.displayHeight * 3 / 4), -90.0D);
-		var4.setColorRGBA_I(0, 100);
+		var4.setColorRGBA_I(0, vignetteAlpha);
 		var4.addVertex((double)this.mc.displayWidth, (double)this.mc.displayHeight, -90.0D);
 		var4.addVertex(0.0D, (double)this.mc.displayHeight, -90.0D);
 		var4.draw();
 
-		// Color aberration (chromatic aberration simulation)
-		float var17 = (float)(Math.sin((double)var5 / 1000.0D) * 0.5D + 0.5D) * 0.1F;
+		// Color aberration (chromatic aberration simulation) - stronger as intensity increases
+		float var17 = (float)(Math.sin((double)var5 / 1000.0D) * 0.5D + 0.5D) * 0.1F * this.vhsIntensity;
+		if(var17 > 1.0F) var17 = 1.0F;
 		var4.startDrawingQuads();
 		var4.setColorRGBA_F(1.0F, 0.0F, 0.0F, var17);
 		var4.addVertex(0.0D, 0.0D, -90.0D);
