@@ -1,69 +1,46 @@
-# Compiled and build artifacts
-*.class
-*.o
-*.obj
-*.exe
-*.dll
-*.so
-*.a
-*.out
+# Скрипты автоматизации и архиваторы
+7z.exe
+7z.dll
+
+# Исполняемые файлы и утилиты RetroMCP
+RetroMCP-Java-CLI.jar
+RetroMCP-Java-GUI.jar
+
+# Папки сборщика, библиотек и самого сервера
 build/
-dist/
-target/
+doc/
+jars/
+libraries/
+freeminecraft/
 
-# Dependencies
-node_modules/
-venv/
-.venv/
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-.gradle/
+# Клод и AI-настройки
+.claude/
+CLAUDE.md
+doc/
 
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-*.swo
+# Настройки среды разработки (IDE) в корне и подпапках
+#.idea/
+#.vscode/
+#*.iml
+#.classpath
+#.project
+#.settings/
+#.windsurf/
 
-# Environment
-.env
-.env.local
-*.env.*
+# Папки компиляции внутри /minecraft
+minecraft/bin/
+minecraft/reobf/
+minecraft/md5/
+minecraft/jars/
+minecraft/output/
 
-# Editors
-.vscode/
-.idea/
+minecraft_server/
+minecraft_server/bin/
+minecraft_server/reobf/
+minecraft_server/md5/
+minecraft_server/jars/
+minecraft_server/output/
 
-# System files
-.DS_Store
-Thumbs.db
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
+# Рабочие файлы игры (карты, логи, конфиги модов)
+minecraft/game/
+minecraft_server/game
