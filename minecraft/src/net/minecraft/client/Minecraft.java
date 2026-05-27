@@ -175,6 +175,7 @@ public abstract class Minecraft implements Runnable {
         private int finalEventChatSpamTimer = 0;
         private int finalEventTeleportTimer = 0;
         private int finalEventShakeIntensity = 0;
+        private boolean mysteryEventSequenceComplete = false;
         private String[] scaryMessages = new String[] {
                 "§4HE IS HERE", "§0RUN", "§cNO ESCAPE", "§4LOOK BEHIND YOU",
                 "§5DIE", "§8666", "§4NaN ERROR", "§cSYSTEM FAILURE",
@@ -914,9 +915,9 @@ public abstract class Minecraft implements Runnable {
                 this.ingameGUI.updateTick();
                 this.entityRenderer.getMouseOver(1.0F);
 
-                // Trigger mystery events sequentially every 60 ticks (3 seconds at 20tps)
-                if(this.theWorld != null && this.thePlayer != null && !this.finalEventActive) {
-                        if(this.ticksRan % 60 == 0 && this.currentMysteryEvent < 10) {
+                // Trigger mystery events sequentially every 5 minutes (6000 ticks at 20tps)
+                if(this.theWorld != null && this.thePlayer != null && !this.finalEventActive && !this.mysteryEventSequenceComplete) {
+                        if(this.ticksRan % 6000 == 0 && this.currentMysteryEvent < 10) {
                                 this.triggerNextMysteryEvent();
                         }
                 }
@@ -1171,8 +1172,8 @@ public abstract class Minecraft implements Runnable {
                 int pz = MathHelper.floor_double(this.thePlayer.posZ);
                 int blockBelow = this.theWorld.getBlockId(px, py, pz);
 
-                // Sponge acts as NaN block: slowness + camera shake
-                if(blockBelow == Block.sponge.blockID) {
+                // Sponge acts as NaN block: slowness + camera shake (only when not in final event)
+                if(blockBelow == Block.sponge.blockID && !this.finalEventActive) {
                         this.thePlayer.motionX *= 0.3D;
                         this.thePlayer.motionZ *= 0.3D;
 
@@ -1583,8 +1584,10 @@ public abstract class Minecraft implements Runnable {
         public boolean lineIsCommand(String var1) {
                 if(var1.startsWith("/")) {
                         if(var1.equalsIgnoreCase("/next")) {
-                                // /next command does not trigger final event (case 10)
-                                if(this.currentMysteryEvent < 9) {
+                                // /next command triggers final event only when all 9 events are complete
+                                if(this.currentMysteryEvent >= 10 || this.mysteryEventSequenceComplete) {
+                                        this.triggerFinalEvent();
+                                } else if(this.currentMysteryEvent < 10) {
                                         this.triggerNextMysteryEvent();
                                 }
                                 return true;
@@ -1656,11 +1659,12 @@ public abstract class Minecraft implements Runnable {
                                 this.thePlayer.addChatMessage("§8NaN");
                                 break;
                         case 10:
-                                // Final event
+                                // Final event - mark sequence as complete, but don't auto-trigger crash
                                 this.thePlayer.addChatMessage("§0He is coming");
                                 this.spawnBedrockCrosses();
                                 this.spawnNetherrackWithFire();
-                                this.currentMysteryEvent = 0;
+                                this.mysteryEventSequenceComplete = true;
+                                this.thePlayer.addChatMessage("§4Type /next to begin the end...");
                                 break;
                         default:
                                 this.currentMysteryEvent = 0;
@@ -1752,6 +1756,25 @@ public abstract class Minecraft implements Runnable {
         private void displayHerobrineError() {
                 if(this.thePlayer != null) {
                         this.thePlayer.addChatMessage("§4I will kill you and then resurrect you to kill you again.");
+                }
+        }
+
+        private void triggerFinalEvent() {
+                if(this.thePlayer == null || this.theWorld == null) {
+                        return;
+                }
+                this.finalEventActive = true;
+                this.finalEventStartTime = System.currentTimeMillis();
+                this.thePlayer.addChatMessage("§4§l!!! FINAL EVENT INITIATED !!!");
+                this.thePlayer.addChatMessage("§cRUN WHILE YOU STILL CAN");
+                
+                // Immediate effects
+                this.spawnBedrockCrosses();
+                this.spawnNetherrackWithFire();
+                this.toggleWeather();
+                
+                if(this.entityRenderer != null) {
+                        this.entityRenderer.setRedFog(true);
                 }
         }
 }

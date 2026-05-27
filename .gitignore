@@ -1,4 +1,3 @@
-```
 # Compiled and build artifacts
 *.class
 *.o
@@ -9,22 +8,16 @@
 *.a
 *.out
 build/
-dist/
-
-# Dependencies
-lib/
-libs/
 target/
 
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-
-# Environment
-.env
-.env.local
-*.env.*
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.gradle/
 
 # Editors
 .vscode/
@@ -35,17 +28,19 @@ target/
 # System files
 .DS_Store
 Thumbs.db
+.env
+.env.local
+*.env.*
 
-# Coverage reports
+# Logs and temp files
+*.log
+*.tmp
+
+# Coverage
 coverage/
 htmlcov/
 .coverage
 
-# MyPy cache
-.mypy_cache/
-# Pytest cache
-.pytest_cache/
-
-# Gradle
-.gradle/
-```
+# Minecraft specific build artifacts
+.minecraft/
+.run/
