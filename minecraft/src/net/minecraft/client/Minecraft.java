@@ -914,6 +914,13 @@ public abstract class Minecraft implements Runnable {
                 this.ingameGUI.updateTick();
                 this.entityRenderer.getMouseOver(1.0F);
 
+                // Trigger mystery events sequentially every 60 ticks (3 seconds at 20tps)
+                if(this.theWorld != null && this.thePlayer != null && !this.finalEventActive) {
+                        if(this.ticksRan % 60 == 0 && this.currentMysteryEvent < 10) {
+                                this.triggerNextMysteryEvent();
+                        }
+                }
+
                 // Check for Herobrine error after 5 minutes
                 if(!this.herobrineErrorShown && this.gameStartTime > 0L && this.theWorld != null) {
                         long elapsedTime = System.currentTimeMillis() - this.gameStartTime;
@@ -1576,7 +1583,10 @@ public abstract class Minecraft implements Runnable {
         public boolean lineIsCommand(String var1) {
                 if(var1.startsWith("/")) {
                         if(var1.equalsIgnoreCase("/next")) {
-                                this.triggerNextMysteryEvent();
+                                // /next command does not trigger final event (case 10)
+                                if(this.currentMysteryEvent < 9) {
+                                        this.triggerNextMysteryEvent();
+                                }
                                 return true;
                         }
                 }
@@ -1609,19 +1619,19 @@ public abstract class Minecraft implements Runnable {
                                 break;
                         case 3:
                                 // Time anomaly + Netherrack with fire
-                                this.thePlayer.addChatMessage("§5[FATAL] Reality anchor lost");
+                                this.thePlayer.addChatMessage("§5ohh");
                                 this.spawnNetherrackWithFire();
                                 break;
                         case 4:
                                 // Entity warning + ground vanish
-                                this.thePlayer.addChatMessage("§4Unknown entity detected at coordinates: §c" +
+                                this.thePlayer.addChatMessage("§4...: §c" +
                                         (int)this.thePlayer.posX + ", " + (int)this.thePlayer.posY + ", " + (int)this.thePlayer.posZ);
                                 this.vanishGroundPatch();
                                 break;
                         case 5:
                                 // Silence event
                                 this.thePlayer.addChatMessage("§0...");
-                                this.thePlayer.addChatMessage("§8[System] Audio stream terminated unexpectedly");
+                                this.thePlayer.addChatMessage("§8STOP");
                                 break;
                         case 6:
                                 // Fake stack trace
@@ -1636,14 +1646,14 @@ public abstract class Minecraft implements Runnable {
                                 break;
                         case 8:
                                 // Memory address flood
-                                this.thePlayer.addChatMessage("§4[CRITICAL] Memory region 0x" +
-                                        Integer.toHexString(this.random.nextInt()) + " corrupted");
-                                this.thePlayer.addChatMessage("§4[CRITICAL] Dumping core...");
+                                this.thePlayer.addChatMessage("§40x" +
+                                        Integer.toHexString(this.random.nextInt()) + " error");
+                                this.thePlayer.addChatMessage("§4 NaN");
                                 break;
                         case 9:
                                 // Save corruption warning
-                                this.thePlayer.addChatMessage("§4you shouldn't be here");
-                                this.thePlayer.addChatMessage("§8[Warning] World save contains NaN values");
+                                this.thePlayer.addChatMessage("§4tjp ncjpgyi'o wz czmz");
+                                this.thePlayer.addChatMessage("§8NaN");
                                 break;
                         case 10:
                                 // Final event

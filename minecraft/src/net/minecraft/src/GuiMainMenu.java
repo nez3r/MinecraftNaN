@@ -146,7 +146,7 @@ public class GuiMainMenu extends GuiScreen {
 
 		// Random glitch text at bottom
 		if(this.glitchTimer % 80 < 10) {
-			String glitchMsg = "§4[WARN] MainMenu.class loaded with NaN parameters";
+			String glitchMsg = "§4YOU ARE DIE!";
 			this.drawString(this.fontRenderer, glitchMsg, 2, this.height - 20, 0x880000);
 		}
 
