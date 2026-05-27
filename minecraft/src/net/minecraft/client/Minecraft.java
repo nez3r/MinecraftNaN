@@ -101,7 +101,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 
 public abstract class Minecraft implements Runnable {
-<<<<<<< HEAD
         private static Minecraft theMinecraft;
         public PlayerController playerController;
         private boolean fullscreen = false;
