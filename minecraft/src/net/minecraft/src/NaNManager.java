@@ -53,6 +53,7 @@ public final class NaNManager {
 	private static boolean permanentRedButtons;
 	private static boolean permanentWindowTitle;
 	private static boolean permanentDebugCorruption;
+	private static boolean permanentInventoryCorruption;
 	private static boolean menuShakeArmed;
 	private static int menuShakeTicks;
 	private static int titleTicks;
@@ -124,9 +125,8 @@ public final class NaNManager {
 			Display.setLocation(previousWindowX + RANDOM.nextInt(17) - 8, previousWindowY + RANDOM.nextInt(17) - 8);
 		}
 
-		if(activeEffect == EFFECT_INVENTORY_CORRUPTION) return;
 		if(mc.theWorld.multiplayerWorld) return;
-		if(activeEffect == 0 && --ticksUntilEvent <= 0) {
+		if((activeEffect == 0 || permanentInventoryCorruption) && --ticksUntilEvent <= 0) {
 			if(nextEffect == EFFECT_RANDOM_LOOT) startRandomLoot(mc);
 			else startEffect(mc, nextEffect, effectDuration(nextEffect));
 			nextEffect = nextEffectId(nextEffect);
@@ -226,8 +226,9 @@ public final class NaNManager {
 		if(effectId == EFFECT_WINDOW_TITLE) permanentWindowTitle = true;
 		if(effectId == EFFECT_DEBUG_CORRUPTION) permanentDebugCorruption = true;
 		if(effectId == EFFECT_MENU_SHAKE) menuShakeArmed = true;
+		if(effectId == EFFECT_INVENTORY_CORRUPTION) permanentInventoryCorruption = true;
 		activeEffect = effectId;
-		activeTicks = effectId == EFFECT_INVENTORY_CORRUPTION || durationTicks == 0 ? -1 : Math.max(1, durationTicks);
+		activeTicks = durationTicks == 0 ? -1 : Math.max(1, durationTicks);
 	}
 
 	public static boolean isGuiJitterActive() { return permanentJitter; }
@@ -453,7 +454,7 @@ public final class NaNManager {
 	}
 
 	public static boolean isActive(int effectId) {
-		return activeEffect == effectId && (activeTicks > 0 || effectId == EFFECT_INVENTORY_CORRUPTION);
+		return activeEffect == effectId && activeTicks > 0 || effectId == EFFECT_INVENTORY_CORRUPTION && permanentInventoryCorruption;
 	}
 
 	public static String randomizeItemName(String name) {

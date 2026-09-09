@@ -40,7 +40,6 @@ public final class NaNManager {
 	private int remainingBlockEvents;
 	private int remainingCobwebEvents;
 	private int remainingInsultEvents;
-	private boolean permanentEventStarted;
 	private int[] redBarsTicks = new int[0];
 	private int[] logTicks = new int[0];
 	private int[] activeEffectTicks = new int[0];
@@ -51,7 +50,7 @@ public final class NaNManager {
 	}
 
 	public void tick() {
-		if(this.server.configManager == null || this.permanentEventStarted) return;
+		if(this.server.configManager == null) return;
 		if(this.server.worldMngr == null) return;
 		if(this.ticksUntilEvent.length != this.server.worldMngr.length) {
 			this.ticksUntilEvent = new int[this.server.worldMngr.length];
@@ -91,7 +90,6 @@ public final class NaNManager {
 				new Packet201HorrorEvent(HORROR_EVENT, effect, duration, itemId, itemCount, ++this.eventSequence, eventMessage(effect)), world.worldProvider.worldType);
 			this.activeEffectTicks[i] = duration;
 			this.nextEffect = nextEffectId(this.nextEffect);
-			if(effect == EFFECT_INVENTORY_CORRUPTION) this.permanentEventStarted = true;
 			this.ticksUntilEvent[i] = this.nextEffect == EFFECT_INVENTORY_CORRUPTION ? 20 * 60 * 2 : nextInterval();
 		}
 	}
@@ -132,7 +130,6 @@ public final class NaNManager {
 		if("next".equalsIgnoreCase(parts[0])) {
 			this.startForAll(this.nextEffect);
 			String result = "Started NaN event: " + effectName(this.nextEffect);
-			if(this.nextEffect == EFFECT_INVENTORY_CORRUPTION) this.permanentEventStarted = true;
 			this.nextEffect = nextEffectId(this.nextEffect);
 			return result;
 		}
@@ -140,7 +137,6 @@ public final class NaNManager {
 			int effect = effectId(parts[1]);
 			if(effect == 0) return "Unknown NaN event: " + parts[1];
 			this.startForAll(effect);
-			if(effect == EFFECT_INVENTORY_CORRUPTION) this.permanentEventStarted = true;
 			return "Started NaN event: " + effectName(effect);
 		}
 		return "Usage: /mst, /event <name>, /next";
