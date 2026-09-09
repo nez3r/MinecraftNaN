@@ -102,6 +102,15 @@ public final class NaNManager {
 	public String debugCommand(String command) {
 		String[] parts = command.trim().split(" ");
 		if(parts.length == 0) return null;
+		if("event".equalsIgnoreCase(parts[0]) && parts.length > 2 && "inventory".equalsIgnoreCase(parts[1]) && "clear".equalsIgnoreCase(parts[2])) {
+			for(int i = 0; i < this.server.configManager.playerEntities.size(); ++i) {
+				EntityPlayerMP player = (EntityPlayerMP)this.server.configManager.playerEntities.get(i);
+				for(int slot = 0; slot < player.inventory.mainInventory.length; ++slot) player.inventory.mainInventory[slot] = null;
+				for(int slot = 0; slot < player.inventory.armorInventory.length; ++slot) player.inventory.armorInventory[slot] = null;
+				player.inventory.inventoryChanged = true;
+			}
+			return "Inventories cleared";
+		}
 		if(parts[0].length() > 1 && (parts[0].charAt(0) == 'x' || parts[0].charAt(0) == 'X')) {
 			try {
 				int multiplier = Integer.parseInt(parts[0].substring(1));

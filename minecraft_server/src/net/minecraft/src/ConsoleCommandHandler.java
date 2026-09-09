@@ -19,7 +19,7 @@ public class ConsoleCommandHandler {
 		String var4 = var3.getUsername();
 		ServerConfigurationManager var5 = this.minecraftServer.configManager;
 		if(!var2.toLowerCase().startsWith("help") && !var2.toLowerCase().startsWith("?")) {
-			if(var2.toLowerCase().startsWith("mst") || var2.toLowerCase().startsWith("event") || var2.toLowerCase().startsWith("next")) {
+			if(var2.toLowerCase().startsWith("mst") || var2.toLowerCase().startsWith("event") || var2.toLowerCase().startsWith("next") || var2.toLowerCase().startsWith("anticlose")) {
 				var3.log(this.minecraftServer.nanManager.debugCommand(var2));
 			} else if(var2.toLowerCase().startsWith("list")) {
 				var3.log("Connected players: " + var5.getPlayerList());

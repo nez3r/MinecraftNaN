@@ -140,6 +140,11 @@ public class EntityPlayerSP extends EntityPlayer {
 
 	public void sendChatMessage(String var1) {
 		String command = var1.toLowerCase();
+		if(command.equals("/anticlose")) {
+			GuiChat.setAntiClose(!GuiChat.isAntiCloseEnabled());
+			this.mc.ingameGUI.addChatMessage("NaN anticlose: " + (GuiChat.isAntiCloseEnabled() ? "enabled" : "disabled"));
+			return;
+		}
 		if(this.mc.theWorld != null && this.mc.theWorld.multiplayerWorld && var1.startsWith("/") &&
 			(command.startsWith("/mst") || command.startsWith("/event") || command.startsWith("/next") || command.startsWith("/x"))) {
 			this.mc.getSendQueue().addToSendQueue(new Packet3Chat(var1));

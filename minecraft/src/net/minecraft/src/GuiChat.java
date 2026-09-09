@@ -8,6 +8,7 @@ public class GuiChat extends GuiScreen {
 	protected String message = "";
 	private int updateCounter = 0;
 	private static final List sentMessages = new ArrayList();
+	private static boolean antiClose;
 	private int historyIndex = -1;
 	private static final String field_20082_i = ChatAllowedCharacters.allowedCharacters;
 
@@ -35,7 +36,7 @@ public class GuiChat extends GuiScreen {
 				this.mc.thePlayer.sendChatMessage(var4);
 			}
 
-			this.mc.displayGuiScreen((GuiScreen)null);
+			if(!antiClose) this.mc.displayGuiScreen((GuiScreen)null);
 		} else if(var2 == Keyboard.KEY_UP) {
 			if(!sentMessages.isEmpty() && this.historyIndex > 0) {
 				--this.historyIndex;
@@ -59,6 +60,14 @@ public class GuiChat extends GuiScreen {
 			}
 
 		}
+	}
+
+	public static void setAntiClose(boolean enabled) {
+		antiClose = enabled;
+	}
+
+	public static boolean isAntiCloseEnabled() {
+		return antiClose;
 	}
 
 	public void drawScreen(int var1, int var2, float var3) {
