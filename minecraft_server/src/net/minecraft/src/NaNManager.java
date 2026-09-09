@@ -220,13 +220,17 @@ public final class NaNManager {
 			for(int i = 0; i < players.size(); ++i) {
 				EntityPlayerMP player = (EntityPlayerMP)players.get(i);
 				int count = effect == EFFECT_BLOCK_EVENT ? 20 + this.random.nextInt(31) : 1;
-				for(int block = 0; block < count; ++block) {
+				int placed = 0;
+				for(int block = 0; block < count * 8 && placed < count; ++block) {
 					int x = MathHelper.floor_double(player.posX) + this.random.nextInt(17) - 8;
 					int y = effect == EFFECT_BLOCK_EVENT ? 80 + this.random.nextInt(21) : MathHelper.floor_double(player.posY) + this.random.nextInt(5) - 2;
 					int z = MathHelper.floor_double(player.posZ) + this.random.nextInt(17) - 8;
 					if(player.worldObj.getBlockId(x, y, z) != 0) continue;
 					int blockId = effect == EFFECT_COBWEB ? Block.web.blockID : new int[]{Block.dirt.blockID, Block.cobblestone.blockID, Block.planks.blockID}[this.random.nextInt(3)];
-					if(player.worldObj.setBlockAndMetadataWithNotify(x, y, z, blockId, 0) && effect == EFFECT_COBWEB) break;
+					if(player.worldObj.setBlockAndMetadataWithNotify(x, y, z, blockId, 0)) {
+						++placed;
+						if(effect == EFFECT_COBWEB) break;
+					}
 				}
 			}
 			return;

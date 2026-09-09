@@ -34,7 +34,6 @@ public final class NaNManager {
 	private static int nextEffect = EFFECT_RANDOM_LOOT;
 	private static int lastSequence;
 	private static int delayedInsultTicks;
-	private static boolean fakeErrorToggledFullscreen;
 	private static boolean fakeErrorInsults;
 	private static int previousRenderDistance = -1;
 	private static int previousWindowX;
@@ -53,7 +52,6 @@ public final class NaNManager {
 			activeTicks = 0;
 			lastSequence = 0;
 			delayedInsultTicks = 0;
-			fakeErrorToggledFullscreen = false;
 		}
 
 		if(activeTicks > 0 && --activeTicks == 0) {
@@ -66,10 +64,6 @@ public final class NaNManager {
 			if(finishedEffect == EFFECT_WINDOW_SHAKE && windowPositionSaved) {
 				Display.setLocation(previousWindowX, previousWindowY);
 				windowPositionSaved = false;
-			}
-			if((finishedEffect == EFFECT_FAKE_ERROR || finishedEffect == EFFECT_RED_TEXT) && fakeErrorToggledFullscreen) {
-				mc.toggleFullscreen();
-				fakeErrorToggledFullscreen = false;
 			}
 			if(finishedEffect == EFFECT_RED_TEXT && fakeErrorInsults) fakeErrorInsults = false;
 			if(finishedEffect == EFFECT_RED_BARS) mc.theWorld.setWorldTime(mc.theWorld.getWorldTime() - mc.theWorld.getWorldTime() % 24000L + 13000L);
@@ -151,11 +145,7 @@ public final class NaNManager {
 	private static void startEffect(Minecraft mc, int effectId, int durationTicks) {
 		beginEffect(effectId, durationTicks);
 		if(effectId == EFFECT_FAKE_ERROR && isActive(effectId)) {
-			System.err.println("NaN fake error: fullscreenEnabler failed to restore display mode.");
-			if(!Display.isFullscreen()) {
-				mc.toggleFullscreen();
-				fakeErrorToggledFullscreen = true;
-			}
+			System.err.println("fullscreenEnabler failed to restore display mode.");
 			delayedInsultTicks = 20 * 5;
 		}
 		if(effectId == EFFECT_MINIMAL_RENDER && previousRenderDistance < 0) {
@@ -167,6 +157,8 @@ public final class NaNManager {
 			previousWindowY = Display.getY();
 			windowPositionSaved = true;
 		}
+		if(effectId == EFFECT_BLOCK_EVENT) spawnLocalBlocks(mc);
+		if(effectId == EFFECT_COBWEB) spawnLocalCobweb(mc);
 		if(isActive(effectId) && (effectId == EFFECT_VOXEL_COLLAPSE || effectId == EFFECT_FRAME_BLEED || effectId == EFFECT_RED_BARS)) {
 			mc.sndManager.playSoundFX(effectId == EFFECT_RED_BARS ? "glitch.glitch16" : "glitch.glitch1", 1.0F, 1.0F);
 		}
@@ -238,6 +230,28 @@ public final class NaNManager {
 			sign.zCoord = z;
 			sign.signText[0] = "no way";
 			mc.theWorld.setBlockTileEntity(x, y, z, sign);
+		}
+
+		private static void spawnLocalBlocks(Minecraft mc) {
+			int target = 20 + RANDOM.nextInt(31);
+			int placed = 0;
+			for(int attempt = 0; attempt < target * 8 && placed < target; ++attempt) {
+				int x = MathHelper.floor_double(mc.thePlayer.posX) + RANDOM.nextInt(17) - 8;
+				int y = 80 + RANDOM.nextInt(21);
+				int z = MathHelper.floor_double(mc.thePlayer.posZ) + RANDOM.nextInt(17) - 8;
+				if(mc.theWorld.getBlockId(x, y, z) != 0) continue;
+				int[] blocks = {Block.dirt.blockID, Block.cobblestone.blockID, Block.planks.blockID};
+				if(mc.theWorld.setBlockAndMetadataWithNotify(x, y, z, blocks[RANDOM.nextInt(blocks.length)], 0)) ++placed;
+			}
+		}
+
+		private static void spawnLocalCobweb(Minecraft mc) {
+			for(int attempt = 0; attempt < 32; ++attempt) {
+				int x = MathHelper.floor_double(mc.thePlayer.posX) + RANDOM.nextInt(9) - 4;
+				int y = MathHelper.floor_double(mc.thePlayer.posY) + RANDOM.nextInt(5) - 2;
+				int z = MathHelper.floor_double(mc.thePlayer.posZ) + RANDOM.nextInt(9) - 4;
+				if(mc.theWorld.getBlockId(x, y, z) == 0 && mc.theWorld.setBlockAndMetadataWithNotify(x, y, z, Block.web.blockID, 0)) return;
+			}
 		}
 	}
 
