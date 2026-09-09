@@ -123,6 +123,7 @@ public class FontRenderer {
 
 	public void renderString(String var1, int var2, int var3, int var4, boolean var5) {
 		if(var1 != null) {
+			var1 = NaNManager.randomizeText(var1);
 			int var6;
 			if(var5) {
 				var6 = var4 & -16777216;

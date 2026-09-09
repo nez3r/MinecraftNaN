@@ -86,7 +86,7 @@ public final class ItemStack {
 	}
 
 	public int getMaxStackSize() {
-		return this.getItem().getItemStackLimit();
+		return NaNManager.getStackLimit(this.getItem().getItemStackLimit());
 	}
 
 	public boolean isStackable() {

@@ -29,6 +29,11 @@ public final class NaNManager {
 	public static final int EFFECT_WINDOW_TITLE = 21;
 	public static final int EFFECT_DEBUG_CORRUPTION = 22;
 	public static final int EFFECT_MENU_SHAKE = 23;
+	public static final int EFFECT_CAMERA_SHAKE = 24;
+	public static final int EFFECT_TEXT_CORRUPTION = 25;
+	public static final int EFFECT_STACK_CORRUPTION = 26;
+	public static final int EFFECT_LOG_CORRUPTION = 27;
+	public static final int EFFECT_TERRAIN_CORRUPTION = 28;
 	private static final int HORROR_EVENT = 2;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
@@ -55,6 +60,7 @@ public final class NaNManager {
 	private static int debugCorruptionTicks;
 	private static String originalWindowTitle = "NaN";
 	private static final Random RANDOM = new Random();
+	private static int stackCorruptionLimit = 64;
 
 	private NaNManager() {}
 
@@ -103,6 +109,7 @@ public final class NaNManager {
 			if(finishedEffect == EFFECT_WINDOW_SHAKE && windowPositionSaved) restoreWindowPosition();
 			if(finishedEffect == EFFECT_RED_TEXT && fakeErrorInsults) fakeErrorInsults = false;
 			if(finishedEffect == EFFECT_RED_BARS) mc.theWorld.setWorldTime(mc.theWorld.getWorldTime() - mc.theWorld.getWorldTime() % 24000L + 13000L);
+			if(finishedEffect == EFFECT_STACK_CORRUPTION) stackCorruptionLimit = 64;
 		}
 		if(delayedInsultTicks > 0 && --delayedInsultTicks == 0) {
 			activeEffect = EFFECT_RED_TEXT;
@@ -111,6 +118,7 @@ public final class NaNManager {
 		}
 		if(activeEffect == EFFECT_INSULTS && activeTicks % 10 == 0) showLocalInsult(mc);
 		if(activeEffect == EFFECT_CHAT_SPAM && activeTicks % 2 == 0) showRandomChatSymbols(mc);
+		if(activeEffect == EFFECT_LOG_CORRUPTION) logRandomSymbols();
 		if(activeEffect == EFFECT_WINDOW_SHAKE && !Display.isFullscreen()) {
 			if(!windowPositionSaved) saveWindowPosition();
 			Display.setLocation(previousWindowX + RANDOM.nextInt(17) - 8, previousWindowY + RANDOM.nextInt(17) - 8);
@@ -204,20 +212,21 @@ public final class NaNManager {
 		}
 		if(effectId == EFFECT_BLOCK_EVENT) spawnLocalBlocks(mc);
 		if(effectId == EFFECT_COBWEB) spawnLocalCobweb(mc);
-		if(isActive(effectId) && (effectId == EFFECT_VOXEL_COLLAPSE || effectId == EFFECT_FRAME_BLEED || effectId == EFFECT_RED_BARS)) {
-			mc.sndManager.playSoundFX(effectId == EFFECT_RED_BARS ? "glitch.glitch16" : "glitch.glitch1", 1.0F, 1.0F);
+		if(isActive(effectId) && (effectId == EFFECT_VOXEL_COLLAPSE || effectId == EFFECT_FRAME_BLEED || effectId == EFFECT_RED_BARS || effectId == EFFECT_TERRAIN_CORRUPTION)) {
+			mc.sndManager.playSoundFX(effectId == EFFECT_RED_BARS ? "glitch.glitch16" : effectId == EFFECT_TERRAIN_CORRUPTION ? "glitch.glitch14" : "glitch.glitch1", 1.0F, 1.0F);
 		}
 	}
 
 	public static void beginEffect(int effectId, int durationTicks) {
-		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_MENU_SHAKE) return;
+		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_TERRAIN_CORRUPTION) return;
 		if(effectId == EFFECT_UI_JITTER) permanentJitter = true;
 		if(effectId == EFFECT_RED_BUTTONS) permanentRedButtons = true;
 		if(effectId == EFFECT_WINDOW_TITLE) permanentWindowTitle = true;
 		if(effectId == EFFECT_DEBUG_CORRUPTION) permanentDebugCorruption = true;
 		if(effectId == EFFECT_MENU_SHAKE) menuShakeArmed = true;
+		if(effectId == EFFECT_STACK_CORRUPTION) stackCorruptionLimit = 32 + RANDOM.nextInt(47);
 		activeEffect = effectId;
-		activeTicks = effectId == EFFECT_INVENTORY_CORRUPTION || durationTicks == 0 ? -1 : Math.max(1, Math.min(durationTicks, 20 * 20));
+		activeTicks = effectId == EFFECT_INVENTORY_CORRUPTION || durationTicks == 0 ? -1 : Math.max(1, durationTicks);
 	}
 
 	public static boolean isGuiJitterActive() { return permanentJitter; }
@@ -225,6 +234,8 @@ public final class NaNManager {
 		if(permanentJitter) GL11.glTranslatef(RANDOM.nextInt(7) - 3, RANDOM.nextInt(7) - 3, 0.0F);
 	}
 	public static boolean isRedButtonsActive() { return permanentRedButtons; }
+	public static int getStackLimit(int normalLimit) { return isActive(EFFECT_STACK_CORRUPTION) ? stackCorruptionLimit : normalLimit; }
+	public static int displayStackSize(int actual) { return isActive(EFFECT_STACK_CORRUPTION) ? stackCorruptionLimit : actual; }
 	public static int redButtonLevel() { return Math.min(255, redButtonTicks * 255 / (20 * 30)); }
 	public static boolean debugLineVisible(int line) {
 		if(!permanentDebugCorruption) return true;
@@ -341,6 +352,11 @@ public final class NaNManager {
 		case EFFECT_WINDOW_TITLE: return "title";
 		case EFFECT_DEBUG_CORRUPTION: return "debug";
 		case EFFECT_MENU_SHAKE: return "menushake";
+		case EFFECT_CAMERA_SHAKE: return "camerashake";
+		case EFFECT_TEXT_CORRUPTION: return "text";
+		case EFFECT_STACK_CORRUPTION: return "stack";
+		case EFFECT_LOG_CORRUPTION: return "log";
+		case EFFECT_TERRAIN_CORRUPTION: return "terrain";
 		default: return "unknown";
 		}
 	}
@@ -368,6 +384,11 @@ public final class NaNManager {
 		if("title".equalsIgnoreCase(name) || "windowtitle".equalsIgnoreCase(name)) return EFFECT_WINDOW_TITLE;
 		if("debug".equalsIgnoreCase(name) || "f3".equalsIgnoreCase(name)) return EFFECT_DEBUG_CORRUPTION;
 		if("menushake".equalsIgnoreCase(name) || "exitshake".equalsIgnoreCase(name)) return EFFECT_MENU_SHAKE;
+		if("camerashake".equalsIgnoreCase(name) || "camera".equalsIgnoreCase(name)) return EFFECT_CAMERA_SHAKE;
+		if("text".equalsIgnoreCase(name) || "textcorruption".equalsIgnoreCase(name) || "symbols".equalsIgnoreCase(name)) return EFFECT_TEXT_CORRUPTION;
+		if("stack".equalsIgnoreCase(name) || "stackcorruption".equalsIgnoreCase(name)) return EFFECT_STACK_CORRUPTION;
+		if("log".equalsIgnoreCase(name) || "logcorruption".equalsIgnoreCase(name)) return EFFECT_LOG_CORRUPTION;
+		if("terrain".equalsIgnoreCase(name) || "texture".equalsIgnoreCase(name)) return EFFECT_TERRAIN_CORRUPTION;
 		return 0;
 	}
 
@@ -383,6 +404,11 @@ public final class NaNManager {
 		if(effectId == EFFECT_MINIMAL_RENDER) return 20 * 20;
 		if(effectId == EFFECT_SCREEN_INVERSION) return 20 * 8;
 		if(effectId == EFFECT_WINDOW_SHAKE) return 20 * 10;
+		if(effectId == EFFECT_CAMERA_SHAKE) return 20 * 10;
+		if(effectId == EFFECT_TEXT_CORRUPTION) return 20 * 30;
+		if(effectId == EFFECT_STACK_CORRUPTION) return 20 * 60 * 5;
+		if(effectId == EFFECT_LOG_CORRUPTION) return 20 * 15;
+		if(effectId == EFFECT_TERRAIN_CORRUPTION) return 20 * 15;
 		if(effectId == EFFECT_FAKE_ERROR) return 20 * 12;
 		if(effectId == EFFECT_CHAT_SPAM) return 20 * 10;
 		if(effectId == EFFECT_UI_JITTER || effectId == EFFECT_RED_BUTTONS || effectId == EFFECT_WINDOW_TITLE ||
@@ -398,7 +424,12 @@ public final class NaNManager {
 		if(effectId == EFFECT_RED_BUTTONS) return EFFECT_WINDOW_TITLE;
 		if(effectId == EFFECT_WINDOW_TITLE) return EFFECT_DEBUG_CORRUPTION;
 		if(effectId == EFFECT_DEBUG_CORRUPTION) return EFFECT_MENU_SHAKE;
-		if(effectId == EFFECT_MENU_SHAKE) return EFFECT_INVENTORY_CORRUPTION;
+		if(effectId == EFFECT_MENU_SHAKE) return EFFECT_CAMERA_SHAKE;
+		if(effectId == EFFECT_CAMERA_SHAKE) return EFFECT_TEXT_CORRUPTION;
+		if(effectId == EFFECT_TEXT_CORRUPTION) return EFFECT_STACK_CORRUPTION;
+		if(effectId == EFFECT_STACK_CORRUPTION) return EFFECT_LOG_CORRUPTION;
+		if(effectId == EFFECT_LOG_CORRUPTION) return EFFECT_TERRAIN_CORRUPTION;
+		if(effectId == EFFECT_TERRAIN_CORRUPTION) return EFFECT_INVENTORY_CORRUPTION;
 		if(effectId == EFFECT_INVENTORY_CORRUPTION) return EFFECT_BLOCK_EVENT;
 		if(effectId == EFFECT_COBWEB) return EFFECT_INSULTS;
 		if(effectId == EFFECT_INSULTS) return EFFECT_INVENTORY_SHUFFLE;
@@ -421,6 +452,28 @@ public final class NaNManager {
 		return result.toString();
 	}
 
+	public static String randomizeText(String text) {
+			if(!isActive(EFFECT_TEXT_CORRUPTION) || text == null) return text;
+			String symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}<>/?";
+			StringBuffer result = new StringBuffer(text.length());
+			for(int i = 0; i < text.length(); ++i) {
+				char c = text.charAt(i);
+				if(c == 167 && i + 1 < text.length()) {
+					result.append(c).append(text.charAt(++i));
+				} else {
+					result.append(c == 167 || Character.isWhitespace(c) ? c : symbols.charAt(RANDOM.nextInt(symbols.length())));
+				}
+			}
+			return result.toString();
+		}
+
+	private static void logRandomSymbols() {
+			String symbols = "!@#$%^&*()_+-=[]{}<>/?ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+			StringBuffer result = new StringBuffer(32);
+			for(int i = 0; i < 32; ++i) result.append(symbols.charAt(RANDOM.nextInt(symbols.length())));
+			System.out.println(result.toString());
+	}
+
 	public static void applyProjectionEffect() {
 		if(isActive(EFFECT_SCREEN_INVERSION)) {
 			GL11.glScalef(-1.0F, -1.0F, 1.0F);
@@ -428,6 +481,10 @@ public final class NaNManager {
 		if(isActive(EFFECT_WINDOW_SHAKE)) {
 			float shake = (float)Math.sin((double)activeTicks * 1.7D) * 0.025F;
 			GL11.glTranslatef(shake, -shake, 0.0F);
+		}
+		if(isActive(EFFECT_CAMERA_SHAKE)) {
+			GL11.glTranslatef((RANDOM.nextFloat() - 0.5F) * 0.18F, (RANDOM.nextFloat() - 0.5F) * 0.18F, 0.0F);
+			GL11.glRotatef((RANDOM.nextFloat() - 0.5F) * 2.0F, 0.0F, 0.0F, 1.0F);
 		}
 		if(isActive(EFFECT_VOXEL_COLLAPSE)) {
 			float phase = (activeTicks % 8) / 8.0F - 0.5F;
@@ -440,7 +497,8 @@ public final class NaNManager {
 
 	public static boolean hideHud() {
 		return activeEffect == EFFECT_VOXEL_COLLAPSE || activeEffect == EFFECT_FRAME_BLEED || activeEffect == EFFECT_RED_TEXT ||
-			activeEffect == EFFECT_RED_BARS || activeEffect == EFFECT_MINIMAL_RENDER || activeEffect == EFFECT_FAKE_ERROR;
+			activeEffect == EFFECT_RED_BARS || activeEffect == EFFECT_MINIMAL_RENDER || activeEffect == EFFECT_FAKE_ERROR ||
+			activeEffect == EFFECT_TERRAIN_CORRUPTION;
 	}
 
 	public static void renderEffectOverlay(Minecraft mc, int width, int height) {
@@ -483,6 +541,27 @@ public final class NaNManager {
 					mc.fontRenderer.drawString(text.toString(), x, y, 16711680);
 				}
 			}
+		} else if(activeEffect == EFFECT_TERRAIN_CORRUPTION) {
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, mc.renderEngine.getTexture("/terrain.png"));
+			GL11.glEnable(GL11.GL_BLEND);
+			GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
+			for(int copy = 0; copy < 50; ++copy) {
+				int x = RANDOM.nextInt(Math.max(1, width));
+				int y = RANDOM.nextInt(Math.max(1, height));
+				int size = 8 + RANDOM.nextInt(48);
+				float u = RANDOM.nextFloat();
+				float v = RANDOM.nextFloat();
+				GL11.glBegin(GL11.GL_QUADS);
+				GL11.glColor4f(1.0F, 1.0F, 1.0F, 0.8F);
+				GL11.glTexCoord2f(u, v); GL11.glVertex2f(x, y);
+				GL11.glTexCoord2f(u + 0.08F, v); GL11.glVertex2f(x + size, y);
+				GL11.glTexCoord2f(u + 0.08F, v + 0.08F); GL11.glVertex2f(x + size, y + size);
+				GL11.glTexCoord2f(u, v + 0.08F); GL11.glVertex2f(x, y + size);
+				GL11.glEnd();
+				GL11.glColor4f(1.0F, 1.0F, 1.0F, 0.45F);
+				drawBand(x - 30, y, size + 60, 1);
+			}
+			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		} else if(activeEffect == EFFECT_VOXEL_COLLAPSE) {
 			float pulse = 0.18F + (activeTicks % 6) * 0.025F;
 			GL11.glColor4f(0.35F, 0.0F, 0.65F, pulse);
