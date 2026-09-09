@@ -286,7 +286,7 @@ public final class NaNManager {
 
 	private int randomItemCount(int itemId) {
 		ItemStack item = new ItemStack(itemId, 1, 0);
-		return item.isStackable() ? this.random.nextInt(32) + 1 : 1;
+		return item.func_21132_c() ? this.random.nextInt(32) + 1 : 1;
 	}
 
 	private void giveItemToPlayers(int itemId, int itemCount, WorldServer world) {
