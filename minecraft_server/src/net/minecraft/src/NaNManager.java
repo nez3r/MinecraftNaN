@@ -5,6 +5,7 @@ import net.minecraft.server.MinecraftServer;
 
 public final class NaNManager {
 	private static final int HORROR_EVENT = 2;
+	private static final int EFFECT_RED_TEXT = 4;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
 	private final MinecraftServer server;
@@ -28,10 +29,10 @@ public final class NaNManager {
 			if(world == null || --this.ticksUntilEvent[i] > 0) continue;
 			if(!world.playerEntities.isEmpty()) {
 				int effect = this.nextEffect;
-				int duration = effect == 3 ? 20 * 7 : 20 * 5;
+				int duration = effectDuration(effect);
 				this.server.configManager.sendPacketToAllPlayersInDimension(
 					new Packet201HorrorEvent(HORROR_EVENT, effect, duration), world.worldProvider.worldType);
-				this.nextEffect = this.nextEffect == 3 ? 2 : 3;
+				this.nextEffect = this.nextEffect == EFFECT_RED_TEXT ? 2 : this.nextEffect + 1;
 			}
 			this.ticksUntilEvent[i] = nextInterval();
 		}
@@ -50,7 +51,7 @@ public final class NaNManager {
 		if("next".equalsIgnoreCase(parts[0])) {
 			this.startForAll(this.nextEffect);
 			String result = "Started NaN event: " + effectName(this.nextEffect);
-			this.nextEffect = this.nextEffect == 3 ? 2 : 3;
+			this.nextEffect = this.nextEffect == EFFECT_RED_TEXT ? 2 : this.nextEffect + 1;
 			return result;
 		}
 		if("event".equalsIgnoreCase(parts[0]) && parts.length > 1) {
@@ -63,13 +64,14 @@ public final class NaNManager {
 	}
 
 	private void startForAll(int effect) {
-		this.server.configManager.sendPacketToAllPlayers(new Packet201HorrorEvent(HORROR_EVENT, effect, effect == 3 ? 20 * 7 : 20 * 5));
+		this.server.configManager.sendPacketToAllPlayers(new Packet201HorrorEvent(HORROR_EVENT, effect, effectDuration(effect)));
 	}
 
 	private String effectName(int effect) {
 		switch(effect) {
 		case 2: return "voxel";
 		case 3: return "bleed";
+		case EFFECT_RED_TEXT: return "redtext";
 		default: return "unknown";
 		}
 	}
@@ -77,6 +79,13 @@ public final class NaNManager {
 	private int effectId(String name) {
 		if("voxel".equalsIgnoreCase(name) || "collapse".equalsIgnoreCase(name)) return 2;
 		if("bleed".equalsIgnoreCase(name) || "wireframe".equalsIgnoreCase(name)) return 3;
+		if("redtext".equalsIgnoreCase(name) || "red".equalsIgnoreCase(name)) return EFFECT_RED_TEXT;
 		return 0;
+	}
+
+	private int effectDuration(int effect) {
+		if(effect == 3) return 20 * 7;
+		if(effect == EFFECT_RED_TEXT) return 20 * 15;
+		return 20 * 5;
 	}
 }

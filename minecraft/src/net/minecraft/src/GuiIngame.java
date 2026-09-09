@@ -30,7 +30,7 @@ public class GuiIngame extends Gui {
 		int var6 = var5.getScaledWidth();
 		int var7 = var5.getScaledHeight();
 		if(NaNManager.hideHud()) {
-			NaNManager.renderEffectOverlay(var6, var7);
+			NaNManager.renderEffectOverlay(this.mc, var6, var7);
 			return;
 		}
 		FontRenderer var8 = this.mc.fontRenderer;
