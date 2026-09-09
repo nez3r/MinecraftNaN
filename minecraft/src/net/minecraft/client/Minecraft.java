@@ -1021,7 +1021,7 @@ public abstract class Minecraft implements Runnable {
 										} while(!Keyboard.getEventKeyState());
 
 										if(Keyboard.getEventKey() == Keyboard.KEY_F11) {
-											this.toggleFullscreen();
+											this.ingameGUI.addChatMessage("Fullscreen is disabled.");
 										} else {
 											if(this.currentScreen != null) {
 												this.currentScreen.handleKeyboardInput();

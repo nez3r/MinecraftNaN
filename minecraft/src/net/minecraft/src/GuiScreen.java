@@ -116,7 +116,7 @@ public class GuiScreen extends Gui {
 	public void handleKeyboardInput() {
 		if(Keyboard.getEventKeyState()) {
 			if(Keyboard.getEventKey() == Keyboard.KEY_F11) {
-				this.mc.toggleFullscreen();
+				this.mc.ingameGUI.addChatMessage("Fullscreen is disabled.");
 				return;
 			}
 

@@ -146,6 +146,7 @@ public final class NaNManager {
 		beginEffect(effectId, durationTicks);
 		if(effectId == EFFECT_FAKE_ERROR && isActive(effectId)) {
 			System.err.println("fullscreenEnabler failed to restore display mode.");
+			mc.ingameGUI.addChatMessage("\u00a7cfullscreenEnabler failed to restore display mode.");
 			delayedInsultTicks = 20 * 5;
 		}
 		if(effectId == EFFECT_MINIMAL_RENDER && previousRenderDistance < 0) {
@@ -427,8 +428,8 @@ public final class NaNManager {
 			}
 		} else if(activeEffect == EFFECT_FAKE_ERROR) {
 			GL11.glEnable(GL11.GL_TEXTURE_2D);
-			mc.fontRenderer.drawString("A fatal error has occurred.", width / 2 - 72, height / 2 - 12, 16711680);
-			mc.fontRenderer.drawString("Minecraft has stopped responding.", width / 2 - 105, height / 2 + 2, 16711680);
+			mc.fontRenderer.drawString(" ", width / 2 - 72, height / 2 - 12, 16711680);
+			mc.fontRenderer.drawString(" ", width / 2 - 105, height / 2 + 2, 16711680);
 		} else {
 			GL11.glColor4f(1.0F, 1.0F, 1.0F, 0.28F);
 			for(int y = 0; y < height; y += 14) {
