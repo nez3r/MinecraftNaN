@@ -104,10 +104,15 @@ public final class NaNManager {
 	public String debugCommand(String command) {
 		String[] parts = command.trim().split(" ");
 		if(parts.length == 0) return null;
-		if(parts[0].length() > 2 && (parts[0].charAt(0) == 'x' || parts[0].charAt(0) == 'X')) {
+		if(parts[0].length() > 1 && (parts[0].charAt(0) == 'x' || parts[0].charAt(0) == 'X')) {
 			try {
 				int multiplier = Integer.parseInt(parts[0].substring(1));
 				if(multiplier < 1) return "Usage: /x<number>";
+				for(int i = 0; i < this.ticksUntilEvent.length; ++i) {
+					if(this.activeEffectTicks[i] == 0) {
+						this.ticksUntilEvent[i] = Math.max(1, this.ticksUntilEvent[i] * this.intervalMultiplier / multiplier);
+					}
+				}
 				this.intervalMultiplier = multiplier;
 				return "NaN event interval multiplier: x" + this.intervalMultiplier;
 			} catch(NumberFormatException exception) {
