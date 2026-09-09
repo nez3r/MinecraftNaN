@@ -61,6 +61,12 @@ public final class NaNManager {
 		for(int i = 0; i < this.server.worldMngr.length; ++i) {
 			WorldServer world = this.server.worldMngr[i];
 			if(world == null) continue;
+			if(world.playerEntities.isEmpty()) {
+				this.redBarsTicks[i] = 0;
+				this.logTicks[i] = 0;
+				this.ticksUntilEvent[i] = nextInterval();
+				continue;
+			}
 			if(this.redBarsTicks[i] > 0 && --this.redBarsTicks[i] == 0) {
 				world.setWorldTime(world.getWorldTime() - world.getWorldTime() % 24000L + 13000L);
 			}
@@ -69,20 +75,18 @@ public final class NaNManager {
 				logRandomSymbols();
 			}
 			if(--this.ticksUntilEvent[i] > 0) continue;
-			if(!world.playerEntities.isEmpty()) {
-				int effect = this.nextEffect;
-				int duration = effectDuration(effect);
-				int itemId = effect == EFFECT_RANDOM_LOOT ? randomItemId() : -1;
-				int itemCount = effect == EFFECT_RANDOM_LOOT ? randomItemCount(itemId) : 0;
-				if(effect == EFFECT_RANDOM_LOOT) giveItemToPlayers(itemId, itemCount, world);
-				applyPlayerEvent(effect, world);
-				if(effect == EFFECT_RED_BARS) this.redBarsTicks[i] = duration;
-				if(effect == EFFECT_LOG_CORRUPTION) this.logTicks[i] = duration;
-				this.server.configManager.sendPacketToAllPlayersInDimension(
-					new Packet201HorrorEvent(HORROR_EVENT, effect, duration, itemId, itemCount, ++this.eventSequence, eventMessage(effect)), world.worldProvider.worldType);
-				this.nextEffect = nextEffectId(this.nextEffect);
-				if(effect == EFFECT_INVENTORY_CORRUPTION) this.permanentEventStarted = true;
-			}
+			int effect = this.nextEffect;
+			int duration = effectDuration(effect);
+			int itemId = effect == EFFECT_RANDOM_LOOT ? randomItemId() : -1;
+			int itemCount = effect == EFFECT_RANDOM_LOOT ? randomItemCount(itemId) : 0;
+			if(effect == EFFECT_RANDOM_LOOT) giveItemToPlayers(itemId, itemCount, world);
+			applyPlayerEvent(effect, world);
+			if(effect == EFFECT_RED_BARS) this.redBarsTicks[i] = duration;
+			if(effect == EFFECT_LOG_CORRUPTION) this.logTicks[i] = duration;
+			this.server.configManager.sendPacketToAllPlayersInDimension(
+				new Packet201HorrorEvent(HORROR_EVENT, effect, duration, itemId, itemCount, ++this.eventSequence, eventMessage(effect)), world.worldProvider.worldType);
+			this.nextEffect = nextEffectId(this.nextEffect);
+			if(effect == EFFECT_INVENTORY_CORRUPTION) this.permanentEventStarted = true;
 			this.ticksUntilEvent[i] = this.nextEffect == EFFECT_INVENTORY_CORRUPTION ? 20 * 60 * 2 : nextInterval();
 		}
 	}
