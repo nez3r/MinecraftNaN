@@ -27,7 +27,6 @@ public final class NaNManager {
 	private static final int EFFECT_MENU_SHAKE = 23;
 	private static final int EFFECT_CAMERA_SHAKE = 24;
 	private static final int EFFECT_TEXT_CORRUPTION = 25;
-	private static final int EFFECT_STACK_CORRUPTION = 26;
 	private static final int EFFECT_LOG_CORRUPTION = 27;
 	private static final int EFFECT_TERRAIN_CORRUPTION = 28;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
@@ -44,6 +43,8 @@ public final class NaNManager {
 	private boolean permanentEventStarted;
 	private int[] redBarsTicks = new int[0];
 	private int[] logTicks = new int[0];
+	private int[] activeEffectTicks = new int[0];
+	private int intervalMultiplier = 1;
 
 	public NaNManager(MinecraftServer server) {
 		this.server = server;
@@ -56,6 +57,7 @@ public final class NaNManager {
 			this.ticksUntilEvent = new int[this.server.worldMngr.length];
 			this.redBarsTicks = new int[this.server.worldMngr.length];
 			this.logTicks = new int[this.server.worldMngr.length];
+			this.activeEffectTicks = new int[this.server.worldMngr.length];
 			for(int i = 0; i < this.ticksUntilEvent.length; ++i) this.ticksUntilEvent[i] = nextInterval();
 		}
 		for(int i = 0; i < this.server.worldMngr.length; ++i) {
@@ -64,9 +66,11 @@ public final class NaNManager {
 			if(world.playerEntities.isEmpty()) {
 				this.redBarsTicks[i] = 0;
 				this.logTicks[i] = 0;
+				this.activeEffectTicks[i] = 0;
 				this.ticksUntilEvent[i] = nextInterval();
 				continue;
 			}
+			if(this.activeEffectTicks[i] > 0) --this.activeEffectTicks[i];
 			if(this.redBarsTicks[i] > 0 && --this.redBarsTicks[i] == 0) {
 				world.setWorldTime(world.getWorldTime() - world.getWorldTime() % 24000L + 13000L);
 			}
@@ -74,7 +78,7 @@ public final class NaNManager {
 				--this.logTicks[i];
 				logRandomSymbols();
 			}
-			if(--this.ticksUntilEvent[i] > 0) continue;
+			if(this.activeEffectTicks[i] > 0 || --this.ticksUntilEvent[i] > 0) continue;
 			int effect = this.nextEffect;
 			int duration = effectDuration(effect);
 			int itemId = effect == EFFECT_RANDOM_LOOT ? randomItemId() : -1;
@@ -85,6 +89,7 @@ public final class NaNManager {
 			if(effect == EFFECT_LOG_CORRUPTION) this.logTicks[i] = duration;
 			this.server.configManager.sendPacketToAllPlayersInDimension(
 				new Packet201HorrorEvent(HORROR_EVENT, effect, duration, itemId, itemCount, ++this.eventSequence, eventMessage(effect)), world.worldProvider.worldType);
+			this.activeEffectTicks[i] = duration;
 			this.nextEffect = nextEffectId(this.nextEffect);
 			if(effect == EFFECT_INVENTORY_CORRUPTION) this.permanentEventStarted = true;
 			this.ticksUntilEvent[i] = this.nextEffect == EFFECT_INVENTORY_CORRUPTION ? 20 * 60 * 2 : nextInterval();
@@ -92,12 +97,23 @@ public final class NaNManager {
 	}
 
 	private int nextInterval() {
-		return MIN_INTERVAL + this.random.nextInt(MAX_INTERVAL - MIN_INTERVAL + 1);
+		int interval = MIN_INTERVAL + this.random.nextInt(MAX_INTERVAL - MIN_INTERVAL + 1);
+		return Math.max(1, interval / this.intervalMultiplier);
 	}
 
 	public String debugCommand(String command) {
 		String[] parts = command.trim().split(" ");
 		if(parts.length == 0) return null;
+		if(parts[0].length() > 2 && (parts[0].charAt(0) == 'x' || parts[0].charAt(0) == 'X')) {
+			try {
+				int multiplier = Integer.parseInt(parts[0].substring(1));
+				if(multiplier < 1) return "Usage: /x<number>";
+				this.intervalMultiplier = multiplier;
+				return "NaN event interval multiplier: x" + this.intervalMultiplier;
+			} catch(NumberFormatException exception) {
+				return "Usage: /x<number>";
+			}
+		}
 		if("mst".equalsIgnoreCase(parts[0])) {
 			return "Next NaN event: " + effectName(this.nextEffect) + " (random order: 4-8 minutes)";
 		}
@@ -121,8 +137,11 @@ public final class NaNManager {
 	private void startForAll(int effect) {
 		int itemId = effect == EFFECT_RANDOM_LOOT ? randomItemId() : -1;
 		int itemCount = effect == EFFECT_RANDOM_LOOT ? randomItemCount(itemId) : 0;
+		int duration = effectDuration(effect);
 		if(effect == EFFECT_RANDOM_LOOT) giveItemToPlayers(itemId, itemCount, null);
 		applyPlayerEvent(effect, null);
+		if(this.activeEffectTicks.length != this.server.worldMngr.length) this.activeEffectTicks = new int[this.server.worldMngr.length];
+		for(int i = 0; i < this.activeEffectTicks.length; ++i) this.activeEffectTicks[i] = duration;
 		if(effect == EFFECT_RED_BARS) {
 			if(this.redBarsTicks.length != this.server.worldMngr.length) this.redBarsTicks = new int[this.server.worldMngr.length];
 			for(int i = 0; i < this.redBarsTicks.length; ++i) this.redBarsTicks[i] = effectDuration(effect);
@@ -131,7 +150,7 @@ public final class NaNManager {
 			if(this.logTicks.length != this.server.worldMngr.length) this.logTicks = new int[this.server.worldMngr.length];
 			for(int i = 0; i < this.logTicks.length; ++i) this.logTicks[i] = effectDuration(effect);
 		}
-		this.server.configManager.sendPacketToAllPlayers(new Packet201HorrorEvent(HORROR_EVENT, effect, effectDuration(effect), itemId, itemCount, ++this.eventSequence, eventMessage(effect)));
+		this.server.configManager.sendPacketToAllPlayers(new Packet201HorrorEvent(HORROR_EVENT, effect, duration, itemId, itemCount, ++this.eventSequence, eventMessage(effect)));
 	}
 
 	private String effectName(int effect) {
@@ -160,7 +179,6 @@ public final class NaNManager {
 		case EFFECT_MENU_SHAKE: return "menushake";
 		case EFFECT_CAMERA_SHAKE: return "camerashake";
 		case EFFECT_TEXT_CORRUPTION: return "text";
-		case EFFECT_STACK_CORRUPTION: return "stack";
 		case EFFECT_LOG_CORRUPTION: return "log";
 		case EFFECT_TERRAIN_CORRUPTION: return "terrain";
 		default: return "unknown";
@@ -192,7 +210,6 @@ public final class NaNManager {
 		if("menushake".equalsIgnoreCase(name) || "exitshake".equalsIgnoreCase(name)) return EFFECT_MENU_SHAKE;
 		if("camerashake".equalsIgnoreCase(name) || "camera".equalsIgnoreCase(name)) return EFFECT_CAMERA_SHAKE;
 		if("text".equalsIgnoreCase(name) || "textcorruption".equalsIgnoreCase(name) || "symbols".equalsIgnoreCase(name)) return EFFECT_TEXT_CORRUPTION;
-		if("stack".equalsIgnoreCase(name) || "stackcorruption".equalsIgnoreCase(name)) return EFFECT_STACK_CORRUPTION;
 		if("log".equalsIgnoreCase(name) || "logcorruption".equalsIgnoreCase(name)) return EFFECT_LOG_CORRUPTION;
 		if("terrain".equalsIgnoreCase(name) || "texture".equalsIgnoreCase(name)) return EFFECT_TERRAIN_CORRUPTION;
 		return 0;
@@ -213,7 +230,6 @@ public final class NaNManager {
 		if(effect == EFFECT_WINDOW_SHAKE) return 20 * 10;
 		if(effect == EFFECT_CAMERA_SHAKE) return 20 * 10;
 		if(effect == EFFECT_TEXT_CORRUPTION) return 20 * 30;
-		if(effect == EFFECT_STACK_CORRUPTION) return 20 * 60 * 5;
 		if(effect == EFFECT_LOG_CORRUPTION) return 20 * 15;
 		if(effect == EFFECT_TERRAIN_CORRUPTION) return 20 * 15;
 		if(effect == EFFECT_FAKE_ERROR) return 20 * 12;
@@ -233,8 +249,7 @@ public final class NaNManager {
 		if(effect == EFFECT_DEBUG_CORRUPTION) return EFFECT_MENU_SHAKE;
 		if(effect == EFFECT_MENU_SHAKE) return EFFECT_CAMERA_SHAKE;
 		if(effect == EFFECT_CAMERA_SHAKE) return EFFECT_TEXT_CORRUPTION;
-		if(effect == EFFECT_TEXT_CORRUPTION) return EFFECT_STACK_CORRUPTION;
-		if(effect == EFFECT_STACK_CORRUPTION) return EFFECT_LOG_CORRUPTION;
+		if(effect == EFFECT_TEXT_CORRUPTION) return EFFECT_LOG_CORRUPTION;
 		if(effect == EFFECT_LOG_CORRUPTION) return EFFECT_TERRAIN_CORRUPTION;
 		if(effect == EFFECT_TERRAIN_CORRUPTION) return EFFECT_INVENTORY_CORRUPTION;
 		if(effect == EFFECT_INVENTORY_CORRUPTION) return nextConstrainedEffect();

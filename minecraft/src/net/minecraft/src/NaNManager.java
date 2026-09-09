@@ -31,7 +31,6 @@ public final class NaNManager {
 	public static final int EFFECT_MENU_SHAKE = 23;
 	public static final int EFFECT_CAMERA_SHAKE = 24;
 	public static final int EFFECT_TEXT_CORRUPTION = 25;
-	public static final int EFFECT_STACK_CORRUPTION = 26;
 	public static final int EFFECT_LOG_CORRUPTION = 27;
 	public static final int EFFECT_TERRAIN_CORRUPTION = 28;
 	private static final int HORROR_EVENT = 2;
@@ -42,6 +41,7 @@ public final class NaNManager {
 	private static int activeEffect;
 	private static int activeTicks;
 	private static int nextEffect = EFFECT_RANDOM_LOOT;
+	private static int intervalMultiplier = 1;
 	private static int lastSequence;
 	private static int delayedInsultTicks;
 	private static boolean fakeErrorInsults;
@@ -60,7 +60,6 @@ public final class NaNManager {
 	private static int debugCorruptionTicks;
 	private static String originalWindowTitle = "NaN";
 	private static final Random RANDOM = new Random();
-	private static int stackCorruptionLimit = 64;
 
 	private NaNManager() {}
 
@@ -110,7 +109,6 @@ public final class NaNManager {
 			if(finishedEffect == EFFECT_WINDOW_SHAKE && windowPositionSaved) restoreWindowPosition();
 			if(finishedEffect == EFFECT_RED_TEXT && fakeErrorInsults) fakeErrorInsults = false;
 			if(finishedEffect == EFFECT_RED_BARS) mc.theWorld.setWorldTime(mc.theWorld.getWorldTime() - mc.theWorld.getWorldTime() % 24000L + 13000L);
-			if(finishedEffect == EFFECT_STACK_CORRUPTION) stackCorruptionLimit = 64;
 			if(finishedEffect == EFFECT_TERRAIN_CORRUPTION) mc.sndManager.stopHorrorSound();
 		}
 		if(delayedInsultTicks > 0 && --delayedInsultTicks == 0) {
@@ -128,7 +126,7 @@ public final class NaNManager {
 
 		if(activeEffect == EFFECT_INVENTORY_CORRUPTION) return;
 		if(mc.theWorld.multiplayerWorld) return;
-		if(--ticksUntilEvent <= 0) {
+		if(activeEffect == 0 && --ticksUntilEvent <= 0) {
 			if(nextEffect == EFFECT_RANDOM_LOOT) startRandomLoot(mc);
 			else startEffect(mc, nextEffect, effectDuration(nextEffect));
 			nextEffect = nextEffectId(nextEffect);
@@ -148,7 +146,8 @@ public final class NaNManager {
 	}
 
 	private static int nextInterval() {
-		return MIN_INTERVAL + RANDOM.nextInt(MAX_INTERVAL - MIN_INTERVAL + 1);
+		int interval = MIN_INTERVAL + RANDOM.nextInt(MAX_INTERVAL - MIN_INTERVAL + 1);
+		return Math.max(1, interval / intervalMultiplier);
 	}
 
 	public static void handleEvent(Minecraft mc, Packet201HorrorEvent event) {
@@ -227,7 +226,6 @@ public final class NaNManager {
 		if(effectId == EFFECT_WINDOW_TITLE) permanentWindowTitle = true;
 		if(effectId == EFFECT_DEBUG_CORRUPTION) permanentDebugCorruption = true;
 		if(effectId == EFFECT_MENU_SHAKE) menuShakeArmed = true;
-		if(effectId == EFFECT_STACK_CORRUPTION) stackCorruptionLimit = 32 + RANDOM.nextInt(47);
 		activeEffect = effectId;
 		activeTicks = effectId == EFFECT_INVENTORY_CORRUPTION || durationTicks == 0 ? -1 : Math.max(1, durationTicks);
 	}
@@ -237,8 +235,6 @@ public final class NaNManager {
 		if(permanentJitter) GL11.glTranslatef(RANDOM.nextInt(7) - 3, RANDOM.nextInt(7) - 3, 0.0F);
 	}
 	public static boolean isRedButtonsActive() { return permanentRedButtons; }
-	public static int getStackLimit(int normalLimit) { return isActive(EFFECT_STACK_CORRUPTION) ? stackCorruptionLimit : normalLimit; }
-	public static int displayStackSize(int actual) { return isActive(EFFECT_STACK_CORRUPTION) ? stackCorruptionLimit : actual; }
 	public static int redButtonLevel() { return Math.min(255, redButtonTicks * 255 / (20 * 30)); }
 	public static boolean debugLineVisible(int line) {
 		if(!permanentDebugCorruption) return true;
@@ -249,6 +245,16 @@ public final class NaNManager {
 	public static String debugCommand(Minecraft mc, String command) {
 		String[] parts = command.trim().split(" ");
 		if(parts.length == 0) return null;
+		if(parts[0].length() > 2 && (parts[0].charAt(0) == 'x' || parts[0].charAt(0) == 'X')) {
+			try {
+				int multiplier = Integer.parseInt(parts[0].substring(1));
+				if(multiplier < 1) return "Usage: /x<number>";
+				intervalMultiplier = multiplier;
+				return "NaN event interval multiplier: x" + intervalMultiplier;
+			} catch(NumberFormatException exception) {
+				return "Usage: /x<number>";
+			}
+		}
 		if("mst".equalsIgnoreCase(parts[0])) {
 			return "Next NaN event: " + effectName(nextEffect) + " (random order: 4-8 minutes)";
 		}
@@ -357,7 +363,6 @@ public final class NaNManager {
 		case EFFECT_MENU_SHAKE: return "menushake";
 		case EFFECT_CAMERA_SHAKE: return "camerashake";
 		case EFFECT_TEXT_CORRUPTION: return "text";
-		case EFFECT_STACK_CORRUPTION: return "stack";
 		case EFFECT_LOG_CORRUPTION: return "log";
 		case EFFECT_TERRAIN_CORRUPTION: return "terrain";
 		default: return "unknown";
@@ -389,7 +394,6 @@ public final class NaNManager {
 		if("menushake".equalsIgnoreCase(name) || "exitshake".equalsIgnoreCase(name)) return EFFECT_MENU_SHAKE;
 		if("camerashake".equalsIgnoreCase(name) || "camera".equalsIgnoreCase(name)) return EFFECT_CAMERA_SHAKE;
 		if("text".equalsIgnoreCase(name) || "textcorruption".equalsIgnoreCase(name) || "symbols".equalsIgnoreCase(name)) return EFFECT_TEXT_CORRUPTION;
-		if("stack".equalsIgnoreCase(name) || "stackcorruption".equalsIgnoreCase(name)) return EFFECT_STACK_CORRUPTION;
 		if("log".equalsIgnoreCase(name) || "logcorruption".equalsIgnoreCase(name)) return EFFECT_LOG_CORRUPTION;
 		if("terrain".equalsIgnoreCase(name) || "texture".equalsIgnoreCase(name)) return EFFECT_TERRAIN_CORRUPTION;
 		return 0;
@@ -409,7 +413,6 @@ public final class NaNManager {
 		if(effectId == EFFECT_WINDOW_SHAKE) return 20 * 10;
 		if(effectId == EFFECT_CAMERA_SHAKE) return 20 * 10;
 		if(effectId == EFFECT_TEXT_CORRUPTION) return 20 * 30;
-		if(effectId == EFFECT_STACK_CORRUPTION) return 20 * 60 * 5;
 		if(effectId == EFFECT_LOG_CORRUPTION) return 20 * 15;
 		if(effectId == EFFECT_TERRAIN_CORRUPTION) return 20 * 15;
 		if(effectId == EFFECT_FAKE_ERROR) return 20 * 12;
@@ -429,8 +432,7 @@ public final class NaNManager {
 		if(effectId == EFFECT_DEBUG_CORRUPTION) return EFFECT_MENU_SHAKE;
 		if(effectId == EFFECT_MENU_SHAKE) return EFFECT_CAMERA_SHAKE;
 		if(effectId == EFFECT_CAMERA_SHAKE) return EFFECT_TEXT_CORRUPTION;
-		if(effectId == EFFECT_TEXT_CORRUPTION) return EFFECT_STACK_CORRUPTION;
-		if(effectId == EFFECT_STACK_CORRUPTION) return EFFECT_LOG_CORRUPTION;
+		if(effectId == EFFECT_TEXT_CORRUPTION) return EFFECT_LOG_CORRUPTION;
 		if(effectId == EFFECT_LOG_CORRUPTION) return EFFECT_TERRAIN_CORRUPTION;
 		if(effectId == EFFECT_TERRAIN_CORRUPTION) return EFFECT_INVENTORY_CORRUPTION;
 		if(effectId == EFFECT_INVENTORY_CORRUPTION) return EFFECT_BLOCK_EVENT;
