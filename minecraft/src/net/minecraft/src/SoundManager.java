@@ -14,6 +14,7 @@ public class SoundManager {
 	private SoundPool soundPoolStreaming = new SoundPool();
 	private SoundPool soundPoolMusic = new SoundPool();
 	private int field_587_e = 0;
+	private String horrorSoundSource;
 	private GameSettings options;
 	private static boolean loaded = false;
 	private Random rand = new Random();
@@ -191,6 +192,28 @@ public class SoundManager {
 				sndSystem.play(var5);
 			}
 
+		}
+	}
+
+	public void playHorrorSound(String var1, float var2, float var3) {
+		this.stopHorrorSound();
+		if(loaded && this.options.soundVolume != 0.0F) {
+			SoundPoolEntry var4 = this.soundPoolSounds.getRandomSoundFromSoundPool(var1);
+			if(var4 != null) {
+				this.horrorSoundSource = "horror_" + this.field_587_e;
+				++this.field_587_e;
+				sndSystem.newSource(false, this.horrorSoundSource, var4.soundUrl, var4.soundName, false, 0.0F, 0.0F, 0.0F, 0, 0.0F);
+				sndSystem.setPitch(this.horrorSoundSource, var3);
+				sndSystem.setVolume(this.horrorSoundSource, Math.min(1.0F, var2) * this.options.soundVolume);
+				sndSystem.play(this.horrorSoundSource);
+			}
+		}
+	}
+
+	public void stopHorrorSound() {
+		if(loaded && this.horrorSoundSource != null) {
+			sndSystem.stop(this.horrorSoundSource);
+			this.horrorSoundSource = null;
 		}
 	}
 }

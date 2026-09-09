@@ -66,6 +66,7 @@ public final class NaNManager {
 
 	public static void tick(Minecraft mc) {
 		if(lastWorld != mc.theWorld) {
+			if(activeEffect == EFFECT_TERRAIN_CORRUPTION) mc.sndManager.stopHorrorSound();
 			if(lastWorld != null && mc.theWorld == null && menuShakeArmed) {
 				menuShakeTicks = 20 * 5;
 				saveWindowPosition();
@@ -110,6 +111,7 @@ public final class NaNManager {
 			if(finishedEffect == EFFECT_RED_TEXT && fakeErrorInsults) fakeErrorInsults = false;
 			if(finishedEffect == EFFECT_RED_BARS) mc.theWorld.setWorldTime(mc.theWorld.getWorldTime() - mc.theWorld.getWorldTime() % 24000L + 13000L);
 			if(finishedEffect == EFFECT_STACK_CORRUPTION) stackCorruptionLimit = 64;
+			if(finishedEffect == EFFECT_TERRAIN_CORRUPTION) mc.sndManager.stopHorrorSound();
 		}
 		if(delayedInsultTicks > 0 && --delayedInsultTicks == 0) {
 			activeEffect = EFFECT_RED_TEXT;
@@ -213,7 +215,8 @@ public final class NaNManager {
 		if(effectId == EFFECT_BLOCK_EVENT) spawnLocalBlocks(mc);
 		if(effectId == EFFECT_COBWEB) spawnLocalCobweb(mc);
 		if(isActive(effectId) && (effectId == EFFECT_VOXEL_COLLAPSE || effectId == EFFECT_FRAME_BLEED || effectId == EFFECT_RED_BARS || effectId == EFFECT_TERRAIN_CORRUPTION)) {
-			mc.sndManager.playSoundFX(effectId == EFFECT_RED_BARS ? "glitch.glitch16" : effectId == EFFECT_TERRAIN_CORRUPTION ? "glitch.glitch14" : "glitch.glitch1", 1.0F, 1.0F);
+			if(effectId == EFFECT_TERRAIN_CORRUPTION) mc.sndManager.playHorrorSound("glitch.glitch14", 1.0F, 1.0F);
+			else mc.sndManager.playSoundFX(effectId == EFFECT_RED_BARS ? "glitch.glitch16" : "glitch.glitch1", 1.0F, 1.0F);
 		}
 	}
 
