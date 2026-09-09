@@ -126,7 +126,7 @@ public final class NaNManager {
 		}
 
 		if(mc.theWorld.multiplayerWorld) return;
-		if((activeEffect == 0 || permanentInventoryCorruption) && --ticksUntilEvent <= 0) {
+		if(activeTicks <= 0 && --ticksUntilEvent <= 0) {
 			if(nextEffect == EFFECT_RANDOM_LOOT) startRandomLoot(mc);
 			else startEffect(mc, nextEffect, effectDuration(nextEffect));
 			nextEffect = nextEffectId(nextEffect);
@@ -258,8 +258,11 @@ public final class NaNManager {
 			}
 		}
 		if("mst".equalsIgnoreCase(parts[0])) {
-			return activeEffect != 0
+			return activeEffect != 0 && activeTicks > 0
 				? "NaN event active: " + effectName(activeEffect) + " (" + formatTicks(activeTicks) + " remaining)"
+				: activeEffect != 0
+				? "NaN event active: " + effectName(activeEffect) + " (permanent); next " + effectName(nextEffect)
+					+ " in " + formatTicks(ticksUntilEvent) + " (x" + intervalMultiplier + ")"
 				: "Next NaN event: " + effectName(nextEffect) + " in " + formatTicks(ticksUntilEvent)
 					+ " (x" + intervalMultiplier + ")";
 		}
