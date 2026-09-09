@@ -31,7 +31,7 @@ public class ThreadDownloadResources extends Thread {
 
 	public void run() {
 		try {
-			URL var1 = new URL("http://s3.amazonaws.com/MinecraftResources/");
+			URL var1 = new URL("https://s3.amazonaws.com/MinecraftResources/");
 			DocumentBuilderFactory var2 = DocumentBuilderFactory.newInstance();
 			DocumentBuilder var3 = var2.newDocumentBuilder();
 			Document var4 = var3.parse(var1.openStream());
@@ -96,10 +96,17 @@ public class ThreadDownloadResources extends Thread {
 			}
 
 			File var8 = new File(this.resourcesFolder, var2);
-			if(!var8.exists() || var8.length() != var3) {
+			if(!var8.exists() || var8.length() != var3 || !isOggResource(var8, var7)) {
 				var8.getParentFile().mkdirs();
 				String var9 = var2.replaceAll(" ", "%20");
-				this.downloadResource(new URL(var1, var9), var8, var3);
+				File var10 = new File(var8.getPath() + ".tmp");
+				this.downloadResource(new URL(var1, var9), var10, var3);
+				if(var8.exists() && !var8.delete()) {
+					throw new IOException("Could not replace cached resource " + var8);
+				}
+				if(!var10.renameTo(var8)) {
+					throw new IOException("Could not replace cached resource " + var8);
+				}
 				if(this.closing) {
 					return;
 				}
@@ -110,6 +117,18 @@ public class ThreadDownloadResources extends Thread {
 			var10.printStackTrace();
 		}
 
+	}
+
+	private boolean isOggResource(File var1, String var2) {
+		if(!var2.equals("sound") && !var2.equals("newsound")) return true;
+		try {
+			DataInputStream var3 = new DataInputStream(new java.io.FileInputStream(var1));
+			int var4 = var3.readInt();
+			var3.close();
+			return var4 == 1332176723;
+		} catch (IOException var5) {
+			return false;
+		}
 	}
 
 	private void downloadResource(URL var1, File var2, long var3) throws IOException {
@@ -123,6 +142,9 @@ public class ThreadDownloadResources extends Thread {
 			if(var9 < 0) {
 				var6.close();
 				var7.close();
+				if(var2.length() != var3) {
+					throw new IOException("Downloaded resource has unexpected size: " + var2);
+				}
 				return;
 			}
 
