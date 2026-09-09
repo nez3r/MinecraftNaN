@@ -1,0 +1,26 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "java",
+			"request": "launch",
+			"name": "NaN Client",
+			"mainClass": "org.mcphackers.launchwrapper.Launch",
+			"projectName": "Minecraft Client",
+			"cwd": "${workspaceFolder}/minecraft/game",
+			"vmArgs": "-Djava.library.path=${workspaceFolder}/libraries/natives",
+			"args": "--username Player --uuid - --session - --version b1.7.3 --gameDir . --assetsDir .\\assets --assetIndex b1.7 --accessToken - --userProperties {} --userType legacy --versionType release --skinProxy pre-b1.9-pre4",
+			"javaExec": "C:\\Program Files\\Java\\jre1.8.0_503\\bin\\java.exe"
+		},
+		{
+			"type": "java",
+			"request": "launch",
+			"name": "NaN Server",
+			"mainClass": "net.minecraft.server.MinecraftServer",
+			"projectName": "Minecraft Server",
+			"cwd": "${workspaceFolder}/minecraft_server/game",
+			"vmArgs": "-Djava.library.path=${workspaceFolder}/libraries/natives",
+			"javaExec": "C:\\Program Files\\Java\\jre1.8.0_503\\bin\\java.exe"
+		}
+	]
+}

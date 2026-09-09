@@ -1,0 +1,14 @@
+.git1
+*.class
+out/
+bin/
+.classpath
+.project
+*.zip
+/build
+/jars
+/minecraft/game
+/minecraft_server/game
+/minecraft/output
+/minecraft_server/output
+RetroMCP-Java-GUI.jar
