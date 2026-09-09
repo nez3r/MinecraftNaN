@@ -173,7 +173,7 @@ public final class NaNManager {
 	}
 
 	public static void beginEffect(int effectId, int durationTicks) {
-		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_FAKE_ERROR) return;
+		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_CHAT_SPAM) return;
 		activeEffect = effectId;
 		activeTicks = effectId == EFFECT_INVENTORY_CORRUPTION ? -1 : Math.max(1, Math.min(durationTicks, 20 * 20));
 	}
@@ -306,7 +306,8 @@ public final class NaNManager {
 		if(effectId == EFFECT_RANDOM_LOOT) return EFFECT_VOXEL_COLLAPSE;
 		if(effectId == EFFECT_RED_TEXT) return EFFECT_RED_BARS;
 		if(effectId == EFFECT_RED_BARS) return EFFECT_INVENTORY_CORRUPTION;
-		if(effectId == EFFECT_INVENTORY_CORRUPTION) return EFFECT_RANDOM_LOOT;
+		if(effectId == EFFECT_INVENTORY_CORRUPTION) return EFFECT_BLOCK_EVENT;
+		if(effectId == EFFECT_COBWEB) return EFFECT_INSULTS;
 		if(effectId == EFFECT_INSULTS) return EFFECT_INVENTORY_SHUFFLE;
 		if(effectId == EFFECT_FAKE_ERROR) return EFFECT_CHAT_SPAM;
 		if(effectId == EFFECT_CHAT_SPAM) return EFFECT_RANDOM_LOOT;
