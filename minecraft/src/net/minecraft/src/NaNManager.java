@@ -216,10 +216,15 @@ public final class NaNManager {
 		} else if(activeEffect == EFFECT_RED_BARS) {
 			GL11.glDisable(GL11.GL_TEXTURE_2D);
 			GL11.glDisable(GL11.GL_BLEND);
-			GL11.glColor3f(1.0F, 0.0F, 0.0F);
-			int bandHeight = Math.max(8, height / 24);
-			for(int y = 0; y < height; y += bandHeight * 2) {
-				drawBand(0, y, width, bandHeight);
+			int barCount = 20 + RANDOM.nextInt(31);
+			for(int i = 0; i < barCount; ++i) {
+				int y = RANDOM.nextInt(Math.max(1, height));
+				int barHeight = 1 + RANDOM.nextInt(3);
+				int x = -RANDOM.nextInt(Math.max(1, width / 3));
+				int barWidth = width + RANDOM.nextInt(Math.max(1, width / 2));
+				float brightness = 0.65F + RANDOM.nextFloat() * 0.35F;
+				GL11.glColor3f(brightness, 0.0F, 0.0F);
+				drawBand(x, y, barWidth, barHeight);
 			}
 		} else {
 			GL11.glColor4f(1.0F, 1.0F, 1.0F, 0.28F);
