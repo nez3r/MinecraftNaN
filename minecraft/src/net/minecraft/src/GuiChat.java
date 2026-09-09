@@ -1,14 +1,19 @@
 package net.minecraft.src;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.lwjgl.input.Keyboard;
 
 public class GuiChat extends GuiScreen {
 	protected String message = "";
 	private int updateCounter = 0;
+	private static final List sentMessages = new ArrayList();
+	private int historyIndex = -1;
 	private static final String field_20082_i = ChatAllowedCharacters.allowedCharacters;
 
 	public void initGui() {
 		Keyboard.enableRepeatEvents(true);
+		this.historyIndex = sentMessages.size();
 	}
 
 	public void onGuiClosed() {
@@ -25,11 +30,25 @@ public class GuiChat extends GuiScreen {
 		} else if(var2 == 28) {
 			String var3 = this.message.trim();
 			if(var3.length() > 0) {
+				sentMessages.add(this.message);
 				String var4 = this.message.trim();
 				this.mc.thePlayer.sendChatMessage(var4);
 			}
 
 			this.mc.displayGuiScreen((GuiScreen)null);
+		} else if(var2 == Keyboard.KEY_UP) {
+			if(!sentMessages.isEmpty() && this.historyIndex > 0) {
+				--this.historyIndex;
+				this.message = (String)sentMessages.get(this.historyIndex);
+			}
+		} else if(var2 == Keyboard.KEY_DOWN) {
+			if(this.historyIndex < sentMessages.size() - 1) {
+				++this.historyIndex;
+				this.message = (String)sentMessages.get(this.historyIndex);
+			} else {
+				this.historyIndex = sentMessages.size();
+				this.message = "";
+			}
 		} else {
 			if(var2 == 14 && this.message.length() > 0) {
 				this.message = this.message.substring(0, this.message.length() - 1);
