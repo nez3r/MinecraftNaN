@@ -141,9 +141,9 @@ public class EntityPlayerSP extends EntityPlayer {
 	public void sendChatMessage(String var1) {
 		String command = var1.toLowerCase();
 		if(this.mc.theWorld != null && this.mc.theWorld.multiplayerWorld && var1.startsWith("/") &&
-			(command.startsWith("/mst") || command.startsWith("/event") || command.startsWith("/next"))) {
+			(command.startsWith("/mst") || command.startsWith("/event") || command.startsWith("/next") || command.startsWith("/x"))) {
 			this.mc.getSendQueue().addToSendQueue(new Packet3Chat(var1));
-		} else if(var1.startsWith("/") && (command.startsWith("/mst") || command.startsWith("/event") || command.startsWith("/next"))) {
+		} else if(var1.startsWith("/") && (command.startsWith("/mst") || command.startsWith("/event") || command.startsWith("/next") || command.startsWith("/x"))) {
 			this.mc.ingameGUI.addChatMessage(NaNManager.debugCommand(this.mc, var1.substring(1)));
 		} else {
 			this.mc.ingameGUI.addChatMessage("<" + this.username + "> " + var1);
