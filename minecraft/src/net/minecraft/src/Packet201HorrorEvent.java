@@ -10,6 +10,8 @@ public class Packet201HorrorEvent extends Packet {
 	public int durationTicks;
 	public int itemId;
 	public int itemCount;
+	public int sequence;
+	public String message;
 
 	public Packet201HorrorEvent() {
 	}
@@ -23,11 +25,17 @@ public class Packet201HorrorEvent extends Packet {
 	}
 
 	public Packet201HorrorEvent(int var1, int var2, int var3, int var4, int var5) {
+		this(var1, var2, var3, var4, var5, 0, "");
+	}
+
+	public Packet201HorrorEvent(int var1, int var2, int var3, int var4, int var5, int var6, String var7) {
 		this.eventId = var1;
 		this.effectId = var2;
 		this.durationTicks = var3;
 		this.itemId = var4;
 		this.itemCount = var5;
+		this.sequence = var6;
+		this.message = var7 == null ? "" : var7;
 	}
 
 	public void readPacketData(DataInputStream var1) throws IOException {
@@ -36,6 +44,8 @@ public class Packet201HorrorEvent extends Packet {
 		this.durationTicks = var1.readInt();
 		this.itemId = var1.readInt();
 		this.itemCount = var1.readInt();
+		this.sequence = var1.readInt();
+		this.message = var1.readUTF();
 	}
 
 	public void writePacketData(DataOutputStream var1) throws IOException {
@@ -44,6 +54,8 @@ public class Packet201HorrorEvent extends Packet {
 		var1.writeInt(this.durationTicks);
 		var1.writeInt(this.itemId);
 		var1.writeInt(this.itemCount);
+		var1.writeInt(this.sequence);
+		var1.writeUTF(this.message == null ? "" : this.message);
 	}
 
 	public void processPacket(NetHandler var1) {
@@ -51,6 +63,6 @@ public class Packet201HorrorEvent extends Packet {
 	}
 
 	public int getPacketSize() {
-		return 20;
+		return 24 + (this.message == null ? 0 : this.message.length() + 2);
 	}
 }
