@@ -231,8 +231,9 @@ public final class NaNManager {
 			sign.signText[0] = "no way";
 			mc.theWorld.setBlockTileEntity(x, y, z, sign);
 		}
+	}
 
-		private static void spawnLocalBlocks(Minecraft mc) {
+	private static void spawnLocalBlocks(Minecraft mc) {
 			int target = 20 + RANDOM.nextInt(31);
 			int placed = 0;
 			for(int attempt = 0; attempt < target * 8 && placed < target; ++attempt) {
@@ -243,15 +244,14 @@ public final class NaNManager {
 				int[] blocks = {Block.dirt.blockID, Block.cobblestone.blockID, Block.planks.blockID};
 				if(mc.theWorld.setBlockAndMetadataWithNotify(x, y, z, blocks[RANDOM.nextInt(blocks.length)], 0)) ++placed;
 			}
-		}
+	}
 
-		private static void spawnLocalCobweb(Minecraft mc) {
+	private static void spawnLocalCobweb(Minecraft mc) {
 			for(int attempt = 0; attempt < 32; ++attempt) {
 				int x = MathHelper.floor_double(mc.thePlayer.posX) + RANDOM.nextInt(9) - 4;
 				int y = MathHelper.floor_double(mc.thePlayer.posY) + RANDOM.nextInt(5) - 2;
 				int z = MathHelper.floor_double(mc.thePlayer.posZ) + RANDOM.nextInt(9) - 4;
 				if(mc.theWorld.getBlockId(x, y, z) == 0 && mc.theWorld.setBlockAndMetadataWithNotify(x, y, z, Block.web.blockID, 0)) return;
-			}
 		}
 	}
 

@@ -253,11 +253,9 @@ public final class NaNManager {
 				index = 0;
 				for(int slot = 0; slot < player.inventory.mainInventory.length; ++slot) player.inventory.mainInventory[slot] = allItems[index++];
 				for(int slot = 0; slot < player.inventory.armorInventory.length; ++slot) player.inventory.armorInventory[slot] = allItems[index++];
-				java.util.List slots = new java.util.ArrayList();
-				for(int slot = 0; slot < player.inventorySlots.inventorySlots.size(); ++slot) {
-					slots.add(((Slot)player.inventorySlots.inventorySlots.get(slot)).getStack());
+				for(int slot = 0; slot < player.inventory.mainInventory.length; ++slot) {
+					player.playerNetServerHandler.sendPacket(new Packet5PlayerInventory(player.entityId, slot, player.inventory.mainInventory[slot]));
 				}
-				player.playerNetServerHandler.sendPacket(new Packet104WindowItems(0, slots));
 			} else if(effect == EFFECT_DROP_ACTIVE) {
 				ItemStack active = player.inventory.decrStackSize(player.inventory.currentItem, player.inventory.getCurrentItem() == null ? 0 : player.inventory.getCurrentItem().stackSize);
 				if(active != null) player.dropPlayerItem(active);
