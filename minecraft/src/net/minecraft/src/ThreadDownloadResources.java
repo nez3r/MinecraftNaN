@@ -96,11 +96,14 @@ public class ThreadDownloadResources extends Thread {
 			}
 
 			File var8 = new File(this.resourcesFolder, var2);
-			if(!var8.exists() || var8.length() != var3 || !isOggResource(var8, var7)) {
+			if(!var8.exists() || !isOggResource(var8, var7)) {
 				var8.getParentFile().mkdirs();
 				String var9 = var2.replaceAll(" ", "%20");
 				File var10 = new File(var8.getPath() + ".tmp");
 				this.downloadResource(new URL(var1, var9), var10, var3);
+				if(!isOggResource(var10, var7)) {
+					throw new IOException("Downloaded resource is not a valid Ogg file: " + var10);
+				}
 				if(var8.exists() && !var8.delete()) {
 					throw new IOException("Could not replace cached resource " + var8);
 				}
@@ -142,9 +145,6 @@ public class ThreadDownloadResources extends Thread {
 			if(var9 < 0) {
 				var6.close();
 				var7.close();
-				if(var2.length() != var3) {
-					throw new IOException("Downloaded resource has unexpected size: " + var2);
-				}
 				return;
 			}
 
