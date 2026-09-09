@@ -50,7 +50,9 @@ public final class NaNManager {
 
 	private static void startEffect(Minecraft mc, int effectId, int durationTicks) {
 		beginEffect(effectId, durationTicks);
-		if(isActive(effectId)) mc.sndManager.playSoundFX("glitch.glitch1", 1.0F, 1.0F);
+		if(isActive(effectId) && effectId != EFFECT_RED_TEXT) {
+			mc.sndManager.playSoundFX("glitch.glitch1", 1.0F, 1.0F);
+		}
 	}
 
 	public static void beginEffect(int effectId, int durationTicks) {
