@@ -8,6 +8,7 @@ public final class NaNManager {
 	private static final int EFFECT_RED_TEXT = 4;
 	private static final int EFFECT_INVENTORY_CORRUPTION = 5;
 	private static final int EFFECT_RANDOM_LOOT = 6;
+	private static final int EFFECT_RED_BARS = 7;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
 	private final MinecraftServer server;
@@ -15,6 +16,7 @@ public final class NaNManager {
 	private int[] ticksUntilEvent = new int[0];
 	private int nextEffect = EFFECT_RANDOM_LOOT;
 	private boolean permanentEventStarted;
+	private int[] redBarsTicks = new int[0];
 
 	public NaNManager(MinecraftServer server) {
 		this.server = server;
@@ -25,17 +27,23 @@ public final class NaNManager {
 		if(this.server.worldMngr == null) return;
 		if(this.ticksUntilEvent.length != this.server.worldMngr.length) {
 			this.ticksUntilEvent = new int[this.server.worldMngr.length];
+			this.redBarsTicks = new int[this.server.worldMngr.length];
 			for(int i = 0; i < this.ticksUntilEvent.length; ++i) this.ticksUntilEvent[i] = nextInterval();
 		}
 		for(int i = 0; i < this.server.worldMngr.length; ++i) {
 			WorldServer world = this.server.worldMngr[i];
-			if(world == null || --this.ticksUntilEvent[i] > 0) continue;
+			if(world == null) continue;
+			if(this.redBarsTicks[i] > 0 && --this.redBarsTicks[i] == 0) {
+				world.setWorldTime(world.getWorldTime() - world.getWorldTime() % 24000L + 13000L);
+			}
+			if(--this.ticksUntilEvent[i] > 0) continue;
 			if(!world.playerEntities.isEmpty()) {
 				int effect = this.nextEffect;
 				int duration = effectDuration(effect);
 				int itemId = effect == EFFECT_RANDOM_LOOT ? randomItemId() : -1;
-				int itemCount = effect == EFFECT_RANDOM_LOOT ? this.random.nextInt(32) + 1 : 0;
+				int itemCount = effect == EFFECT_RANDOM_LOOT ? randomItemCount(itemId) : 0;
 				if(effect == EFFECT_RANDOM_LOOT) giveItemToPlayers(itemId, itemCount, world);
+				if(effect == EFFECT_RED_BARS) this.redBarsTicks[i] = duration;
 				this.server.configManager.sendPacketToAllPlayersInDimension(
 					new Packet201HorrorEvent(HORROR_EVENT, effect, duration, itemId, itemCount), world.worldProvider.worldType);
 				this.nextEffect = nextEffectId(this.nextEffect);
@@ -74,8 +82,12 @@ public final class NaNManager {
 
 	private void startForAll(int effect) {
 		int itemId = effect == EFFECT_RANDOM_LOOT ? randomItemId() : -1;
-		int itemCount = effect == EFFECT_RANDOM_LOOT ? this.random.nextInt(32) + 1 : 0;
+		int itemCount = effect == EFFECT_RANDOM_LOOT ? randomItemCount(itemId) : 0;
 		if(effect == EFFECT_RANDOM_LOOT) giveItemToPlayers(itemId, itemCount, null);
+		if(effect == EFFECT_RED_BARS) {
+			if(this.redBarsTicks.length != this.server.worldMngr.length) this.redBarsTicks = new int[this.server.worldMngr.length];
+			for(int i = 0; i < this.redBarsTicks.length; ++i) this.redBarsTicks[i] = effectDuration(effect);
+		}
 		this.server.configManager.sendPacketToAllPlayers(new Packet201HorrorEvent(HORROR_EVENT, effect, effectDuration(effect), itemId, itemCount));
 	}
 
@@ -86,6 +98,7 @@ public final class NaNManager {
 		case EFFECT_RED_TEXT: return "redtext";
 		case EFFECT_INVENTORY_CORRUPTION: return "inventory";
 		case EFFECT_RANDOM_LOOT: return "loot";
+		case EFFECT_RED_BARS: return "redbars";
 		default: return "unknown";
 		}
 	}
@@ -96,6 +109,7 @@ public final class NaNManager {
 		if("redtext".equalsIgnoreCase(name) || "red".equalsIgnoreCase(name)) return EFFECT_RED_TEXT;
 		if("inventory".equalsIgnoreCase(name) || "items".equalsIgnoreCase(name)) return EFFECT_INVENTORY_CORRUPTION;
 		if("loot".equalsIgnoreCase(name) || "item".equalsIgnoreCase(name)) return EFFECT_RANDOM_LOOT;
+		if("redbars".equalsIgnoreCase(name) || "bars".equalsIgnoreCase(name)) return EFFECT_RED_BARS;
 		return 0;
 	}
 
@@ -104,11 +118,14 @@ public final class NaNManager {
 		if(effect == EFFECT_RED_TEXT) return 20 * 15;
 		if(effect == EFFECT_INVENTORY_CORRUPTION) return 0;
 		if(effect == EFFECT_RANDOM_LOOT) return 0;
+		if(effect == EFFECT_RED_BARS) return 246;
 		return 20 * 5;
 	}
 
 	private int nextEffectId(int effect) {
 		if(effect == EFFECT_RANDOM_LOOT) return 2;
+		if(effect == EFFECT_RED_TEXT) return EFFECT_RED_BARS;
+		if(effect == EFFECT_RED_BARS) return EFFECT_INVENTORY_CORRUPTION;
 		if(effect == EFFECT_INVENTORY_CORRUPTION) return EFFECT_RANDOM_LOOT;
 		return effect + 1;
 	}
@@ -119,6 +136,11 @@ public final class NaNManager {
 			itemId = this.random.nextInt(Item.itemsList.length);
 		} while(Item.itemsList[itemId] == null);
 		return itemId;
+	}
+
+	private int randomItemCount(int itemId) {
+		ItemStack item = new ItemStack(itemId, 1, 0);
+		return item.isStackable() ? this.random.nextInt(32) + 1 : 1;
 	}
 
 	private void giveItemToPlayers(int itemId, int itemCount, WorldServer world) {

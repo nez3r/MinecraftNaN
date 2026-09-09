@@ -11,6 +11,7 @@ public final class NaNManager {
 	public static final int EFFECT_RED_TEXT = 4;
 	public static final int EFFECT_INVENTORY_CORRUPTION = 5;
 	public static final int EFFECT_RANDOM_LOOT = 6;
+	public static final int EFFECT_RED_BARS = 7;
 	private static final int HORROR_EVENT = 2;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
@@ -31,7 +32,11 @@ public final class NaNManager {
 			activeEffect = 0;
 			activeTicks = 0;
 		}
-		if(activeTicks > 0 && --activeTicks == 0) activeEffect = 0;
+		if(activeTicks > 0 && --activeTicks == 0) {
+			int finishedEffect = activeEffect;
+			activeEffect = 0;
+			if(finishedEffect == EFFECT_RED_BARS) mc.theWorld.setWorldTime(mc.theWorld.getWorldTime() - mc.theWorld.getWorldTime() % 24000L + 13000L);
+		}
 		if(activeEffect == EFFECT_INVENTORY_CORRUPTION) return;
 		if(mc.theWorld.multiplayerWorld) return;
 		if(--ticksUntilEvent <= 0) {
@@ -64,18 +69,19 @@ public final class NaNManager {
 		do {
 			itemId = RANDOM.nextInt(Item.itemsList.length);
 		} while(Item.itemsList[itemId] == null);
-		giveItem(mc, itemId, RANDOM.nextInt(32) + 1);
+		ItemStack item = new ItemStack(itemId, 1, 0);
+		giveItem(mc, itemId, item.isStackable() ? RANDOM.nextInt(32) + 1 : 1);
 	}
 
 	private static void startEffect(Minecraft mc, int effectId, int durationTicks) {
 		beginEffect(effectId, durationTicks);
-		if(isActive(effectId) && (effectId == EFFECT_VOXEL_COLLAPSE || effectId == EFFECT_FRAME_BLEED)) {
-			mc.sndManager.playSoundFX("glitch.glitch1", 1.0F, 1.0F);
+		if(isActive(effectId) && (effectId == EFFECT_VOXEL_COLLAPSE || effectId == EFFECT_FRAME_BLEED || effectId == EFFECT_RED_BARS)) {
+			mc.sndManager.playSoundFX(effectId == EFFECT_RED_BARS ? "glitch.glitch16" : "glitch.glitch1", 1.0F, 1.0F);
 		}
 	}
 
 	public static void beginEffect(int effectId, int durationTicks) {
-		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_INVENTORY_CORRUPTION) return;
+		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_RED_BARS) return;
 		activeEffect = effectId;
 		activeTicks = effectId == EFFECT_INVENTORY_CORRUPTION ? -1 : Math.max(1, Math.min(durationTicks, 20 * 15));
 	}
@@ -110,6 +116,7 @@ public final class NaNManager {
 		case EFFECT_RED_TEXT: return "redtext";
 		case EFFECT_INVENTORY_CORRUPTION: return "inventory";
 		case EFFECT_RANDOM_LOOT: return "loot";
+		case EFFECT_RED_BARS: return "redbars";
 		default: return "unknown";
 		}
 	}
@@ -120,6 +127,7 @@ public final class NaNManager {
 		if("redtext".equalsIgnoreCase(name) || "red".equalsIgnoreCase(name)) return EFFECT_RED_TEXT;
 		if("inventory".equalsIgnoreCase(name) || "items".equalsIgnoreCase(name)) return EFFECT_INVENTORY_CORRUPTION;
 		if("loot".equalsIgnoreCase(name) || "item".equalsIgnoreCase(name)) return EFFECT_RANDOM_LOOT;
+		if("redbars".equalsIgnoreCase(name) || "bars".equalsIgnoreCase(name)) return EFFECT_RED_BARS;
 		return 0;
 	}
 
@@ -127,11 +135,14 @@ public final class NaNManager {
 		if(effectId == EFFECT_FRAME_BLEED) return 20 * 7;
 		if(effectId == EFFECT_RED_TEXT) return 20 * 15;
 		if(effectId == EFFECT_INVENTORY_CORRUPTION || effectId == EFFECT_RANDOM_LOOT) return 0;
+		if(effectId == EFFECT_RED_BARS) return 246;
 		return 20 * 5;
 	}
 
 	private static int nextEffectId(int effectId) {
 		if(effectId == EFFECT_RANDOM_LOOT) return EFFECT_VOXEL_COLLAPSE;
+		if(effectId == EFFECT_RED_TEXT) return EFFECT_RED_BARS;
+		if(effectId == EFFECT_RED_BARS) return EFFECT_INVENTORY_CORRUPTION;
 		if(effectId == EFFECT_INVENTORY_CORRUPTION) return EFFECT_RANDOM_LOOT;
 		return effectId + 1;
 	}
@@ -161,7 +172,7 @@ public final class NaNManager {
 	}
 
 	public static boolean hideHud() {
-		return activeEffect == EFFECT_VOXEL_COLLAPSE || activeEffect == EFFECT_FRAME_BLEED || activeEffect == EFFECT_RED_TEXT;
+		return activeEffect == EFFECT_VOXEL_COLLAPSE || activeEffect == EFFECT_FRAME_BLEED || activeEffect == EFFECT_RED_TEXT || activeEffect == EFFECT_RED_BARS;
 	}
 
 	public static void renderEffectOverlay(Minecraft mc, int width, int height) {
@@ -176,6 +187,7 @@ public final class NaNManager {
 		GL11.glLoadIdentity();
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		GL11.glDisable(GL11.GL_CULL_FACE);
 		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		if(activeEffect == EFFECT_RED_TEXT) {
@@ -201,6 +213,14 @@ public final class NaNManager {
 			drawBand(0, (activeTicks * 13) % height, width, height / 7 + 2);
 			GL11.glColor4f(0.1F, 0.0F, 0.25F, 0.3F);
 			for(int y = 0; y < height; y += 12) drawBand(0, y, width, 3);
+		} else if(activeEffect == EFFECT_RED_BARS) {
+			GL11.glDisable(GL11.GL_TEXTURE_2D);
+			GL11.glDisable(GL11.GL_BLEND);
+			GL11.glColor3f(1.0F, 0.0F, 0.0F);
+			int bandHeight = Math.max(8, height / 24);
+			for(int y = 0; y < height; y += bandHeight * 2) {
+				drawBand(0, y, width, bandHeight);
+			}
 		} else {
 			GL11.glColor4f(1.0F, 1.0F, 1.0F, 0.28F);
 			for(int y = 0; y < height; y += 14) {
@@ -212,6 +232,7 @@ public final class NaNManager {
 		}
 		GL11.glDisable(GL11.GL_BLEND);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glEnable(GL11.GL_TEXTURE_2D);
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 		GL11.glMatrixMode(GL11.GL_MODELVIEW);
@@ -224,10 +245,10 @@ public final class NaNManager {
 
 	private static void drawBand(int x, int y, int bandWidth, int bandHeight) {
 		GL11.glBegin(GL11.GL_QUADS);
-		GL11.glVertex3f(x, y, -90.0F);
-		GL11.glVertex3f(x + bandWidth, y, -90.0F);
-		GL11.glVertex3f(x + bandWidth, y + bandHeight, -90.0F);
-		GL11.glVertex3f(x, y + bandHeight, -90.0F);
+		GL11.glVertex3f(x, y, 0.0F);
+		GL11.glVertex3f(x + bandWidth, y, 0.0F);
+		GL11.glVertex3f(x + bandWidth, y + bandHeight, 0.0F);
+		GL11.glVertex3f(x, y + bandHeight, 0.0F);
 		GL11.glEnd();
 	}
 
