@@ -24,6 +24,11 @@ public final class NaNManager {
 	public static final int EFFECT_WINDOW_SHAKE = 16;
 	public static final int EFFECT_FAKE_ERROR = 17;
 	public static final int EFFECT_CHAT_SPAM = 18;
+	public static final int EFFECT_UI_JITTER = 19;
+	public static final int EFFECT_RED_BUTTONS = 20;
+	public static final int EFFECT_WINDOW_TITLE = 21;
+	public static final int EFFECT_DEBUG_CORRUPTION = 22;
+	public static final int EFFECT_MENU_SHAKE = 23;
 	private static final int HORROR_EVENT = 2;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
@@ -39,20 +44,54 @@ public final class NaNManager {
 	private static int previousWindowX;
 	private static int previousWindowY;
 	private static boolean windowPositionSaved;
+	private static boolean permanentJitter;
+	private static boolean permanentRedButtons;
+	private static boolean permanentWindowTitle;
+	private static boolean permanentDebugCorruption;
+	private static boolean menuShakeArmed;
+	private static int menuShakeTicks;
+	private static int titleTicks;
+	private static int redButtonTicks;
+	private static int debugCorruptionTicks;
+	private static String originalWindowTitle = "NaN";
 	private static final Random RANDOM = new Random();
 
 	private NaNManager() {}
 
 	public static void tick(Minecraft mc) {
-		if(mc.theWorld == null || mc.thePlayer == null) return;
 		if(lastWorld != mc.theWorld) {
+			if(lastWorld != null && mc.theWorld == null && menuShakeArmed) {
+				menuShakeTicks = 20 * 5;
+				saveWindowPosition();
+			}
 			lastWorld = mc.theWorld;
-			ticksUntilEvent = nextInterval();
-			activeEffect = 0;
-			activeTicks = 0;
-			lastSequence = 0;
-			delayedInsultTicks = 0;
+			if(mc.theWorld != null) {
+				ticksUntilEvent = nextInterval();
+				activeEffect = 0;
+				activeTicks = 0;
+				lastSequence = 0;
+				delayedInsultTicks = 0;
+			}
 		}
+		if(permanentWindowTitle) {
+			++titleTicks;
+			int length = Math.min(15, titleTicks / (20 * 15) + 1);
+			String symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+			StringBuffer title = new StringBuffer();
+			for(int i = 0; i < length; ++i) title.append(symbols.charAt(RANDOM.nextInt(symbols.length())));
+			Display.setTitle(title.toString());
+		}
+		if(permanentRedButtons) ++redButtonTicks;
+		if(permanentDebugCorruption) ++debugCorruptionTicks;
+		if(menuShakeTicks > 0) {
+			--menuShakeTicks;
+			if(!Display.isFullscreen()) {
+				if(!windowPositionSaved) saveWindowPosition();
+				Display.setLocation(previousWindowX + RANDOM.nextInt(41) - 20, previousWindowY + RANDOM.nextInt(41) - 20);
+			}
+			if(menuShakeTicks == 0 && windowPositionSaved) restoreWindowPosition();
+		}
+		if(mc.theWorld == null || mc.thePlayer == null) return;
 
 		if(activeTicks > 0 && --activeTicks == 0) {
 			int finishedEffect = activeEffect;
@@ -61,10 +100,7 @@ public final class NaNManager {
 				mc.gameSettings.renderDistance = previousRenderDistance;
 				previousRenderDistance = -1;
 			}
-			if(finishedEffect == EFFECT_WINDOW_SHAKE && windowPositionSaved) {
-				Display.setLocation(previousWindowX, previousWindowY);
-				windowPositionSaved = false;
-			}
+			if(finishedEffect == EFFECT_WINDOW_SHAKE && windowPositionSaved) restoreWindowPosition();
 			if(finishedEffect == EFFECT_RED_TEXT && fakeErrorInsults) fakeErrorInsults = false;
 			if(finishedEffect == EFFECT_RED_BARS) mc.theWorld.setWorldTime(mc.theWorld.getWorldTime() - mc.theWorld.getWorldTime() % 24000L + 13000L);
 		}
@@ -76,13 +112,10 @@ public final class NaNManager {
 		if(activeEffect == EFFECT_INSULTS && activeTicks % 10 == 0) showLocalInsult(mc);
 		if(activeEffect == EFFECT_CHAT_SPAM && activeTicks % 2 == 0) showRandomChatSymbols(mc);
 		if(activeEffect == EFFECT_WINDOW_SHAKE && !Display.isFullscreen()) {
-			if(!windowPositionSaved) {
-				previousWindowX = Display.getX();
-				previousWindowY = Display.getY();
-				windowPositionSaved = true;
-			}
+			if(!windowPositionSaved) saveWindowPosition();
 			Display.setLocation(previousWindowX + RANDOM.nextInt(17) - 8, previousWindowY + RANDOM.nextInt(17) - 8);
 		}
+
 		if(activeEffect == EFFECT_INVENTORY_CORRUPTION) return;
 		if(mc.theWorld.multiplayerWorld) return;
 		if(--ticksUntilEvent <= 0) {
@@ -91,6 +124,17 @@ public final class NaNManager {
 			nextEffect = nextEffectId(nextEffect);
 			ticksUntilEvent = nextEffect == EFFECT_INVENTORY_CORRUPTION ? 20 * 60 * 2 : nextInterval();
 		}
+	}
+
+	private static void saveWindowPosition() {
+		previousWindowX = Display.getX();
+		previousWindowY = Display.getY();
+		windowPositionSaved = true;
+	}
+
+	private static void restoreWindowPosition() {
+		Display.setLocation(previousWindowX, previousWindowY);
+		windowPositionSaved = false;
 	}
 
 	private static int nextInterval() {
@@ -166,10 +210,27 @@ public final class NaNManager {
 	}
 
 	public static void beginEffect(int effectId, int durationTicks) {
-		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_CHAT_SPAM) return;
+		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_MENU_SHAKE) return;
+		if(effectId == EFFECT_UI_JITTER) permanentJitter = true;
+		if(effectId == EFFECT_RED_BUTTONS) permanentRedButtons = true;
+		if(effectId == EFFECT_WINDOW_TITLE) permanentWindowTitle = true;
+		if(effectId == EFFECT_DEBUG_CORRUPTION) permanentDebugCorruption = true;
+		if(effectId == EFFECT_MENU_SHAKE) menuShakeArmed = true;
 		activeEffect = effectId;
-		activeTicks = effectId == EFFECT_INVENTORY_CORRUPTION ? -1 : Math.max(1, Math.min(durationTicks, 20 * 20));
+		activeTicks = effectId == EFFECT_INVENTORY_CORRUPTION || durationTicks == 0 ? -1 : Math.max(1, Math.min(durationTicks, 20 * 20));
 	}
+
+	public static boolean isGuiJitterActive() { return permanentJitter; }
+	public static void applyGuiJitter() {
+		if(permanentJitter) GL11.glTranslatef(RANDOM.nextInt(7) - 3, RANDOM.nextInt(7) - 3, 0.0F);
+	}
+	public static boolean isRedButtonsActive() { return permanentRedButtons; }
+	public static int redButtonLevel() { return Math.min(255, redButtonTicks * 255 / (20 * 30)); }
+	public static boolean debugLineVisible(int line) {
+		if(!permanentDebugCorruption) return true;
+		return debugCorruptionTicks < (line + 1) * 100;
+	}
+	public static boolean debugCoordinatesVisible() { return !permanentDebugCorruption || debugCorruptionTicks < 300; }
 
 	public static String debugCommand(Minecraft mc, String command) {
 		String[] parts = command.trim().split(" ");
@@ -275,6 +336,11 @@ public final class NaNManager {
 		case EFFECT_WINDOW_SHAKE: return "shake";
 		case EFFECT_FAKE_ERROR: return "error";
 		case EFFECT_CHAT_SPAM: return "chatspam";
+		case EFFECT_UI_JITTER: return "jitter";
+		case EFFECT_RED_BUTTONS: return "redbuttons";
+		case EFFECT_WINDOW_TITLE: return "title";
+		case EFFECT_DEBUG_CORRUPTION: return "debug";
+		case EFFECT_MENU_SHAKE: return "menushake";
 		default: return "unknown";
 		}
 	}
@@ -297,6 +363,11 @@ public final class NaNManager {
 		if("shake".equalsIgnoreCase(name) || "windowshake".equalsIgnoreCase(name)) return EFFECT_WINDOW_SHAKE;
 		if("error".equalsIgnoreCase(name) || "fakeerror".equalsIgnoreCase(name)) return EFFECT_FAKE_ERROR;
 		if("chatspam".equalsIgnoreCase(name) || "spam".equalsIgnoreCase(name)) return EFFECT_CHAT_SPAM;
+		if("jitter".equalsIgnoreCase(name) || "ui".equalsIgnoreCase(name)) return EFFECT_UI_JITTER;
+		if("redbuttons".equalsIgnoreCase(name) || "buttons".equalsIgnoreCase(name)) return EFFECT_RED_BUTTONS;
+		if("title".equalsIgnoreCase(name) || "windowtitle".equalsIgnoreCase(name)) return EFFECT_WINDOW_TITLE;
+		if("debug".equalsIgnoreCase(name) || "f3".equalsIgnoreCase(name)) return EFFECT_DEBUG_CORRUPTION;
+		if("menushake".equalsIgnoreCase(name) || "exitshake".equalsIgnoreCase(name)) return EFFECT_MENU_SHAKE;
 		return 0;
 	}
 
@@ -314,18 +385,25 @@ public final class NaNManager {
 		if(effectId == EFFECT_WINDOW_SHAKE) return 20 * 10;
 		if(effectId == EFFECT_FAKE_ERROR) return 20 * 12;
 		if(effectId == EFFECT_CHAT_SPAM) return 20 * 10;
+		if(effectId == EFFECT_UI_JITTER || effectId == EFFECT_RED_BUTTONS || effectId == EFFECT_WINDOW_TITLE ||
+			effectId == EFFECT_DEBUG_CORRUPTION || effectId == EFFECT_MENU_SHAKE) return 0;
 		return 20 * 5;
 	}
 
 	private static int nextEffectId(int effectId) {
 		if(effectId == EFFECT_RANDOM_LOOT) return EFFECT_VOXEL_COLLAPSE;
 		if(effectId == EFFECT_RED_TEXT) return EFFECT_RED_BARS;
-		if(effectId == EFFECT_RED_BARS) return EFFECT_INVENTORY_CORRUPTION;
+		if(effectId == EFFECT_RED_BARS) return EFFECT_UI_JITTER;
+		if(effectId == EFFECT_UI_JITTER) return EFFECT_RED_BUTTONS;
+		if(effectId == EFFECT_RED_BUTTONS) return EFFECT_WINDOW_TITLE;
+		if(effectId == EFFECT_WINDOW_TITLE) return EFFECT_DEBUG_CORRUPTION;
+		if(effectId == EFFECT_DEBUG_CORRUPTION) return EFFECT_MENU_SHAKE;
+		if(effectId == EFFECT_MENU_SHAKE) return EFFECT_INVENTORY_CORRUPTION;
 		if(effectId == EFFECT_INVENTORY_CORRUPTION) return EFFECT_BLOCK_EVENT;
 		if(effectId == EFFECT_COBWEB) return EFFECT_INSULTS;
 		if(effectId == EFFECT_INSULTS) return EFFECT_INVENTORY_SHUFFLE;
 		if(effectId == EFFECT_FAKE_ERROR) return EFFECT_CHAT_SPAM;
-		if(effectId == EFFECT_CHAT_SPAM) return EFFECT_RANDOM_LOOT;
+		if(effectId == EFFECT_CHAT_SPAM) return EFFECT_UI_JITTER;
 		return effectId + 1;
 	}
 

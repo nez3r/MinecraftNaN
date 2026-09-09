@@ -424,7 +424,10 @@ public class EntityRenderer {
 
 			if(this.mc.currentScreen != null) {
 				GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+				GL11.glPushMatrix();
+				NaNManager.applyGuiJitter();
 				this.mc.currentScreen.drawScreen(var16, var17, var1);
+				GL11.glPopMatrix();
 				if(this.mc.currentScreen != null && this.mc.currentScreen.field_25091_h != null) {
 					this.mc.currentScreen.field_25091_h.func_25087_a(var1);
 				}

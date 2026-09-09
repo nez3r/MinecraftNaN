@@ -45,7 +45,9 @@ public class GuiButton extends Gui {
 		if(this.enabled2) {
 			FontRenderer var4 = var1.fontRenderer;
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, var1.renderEngine.getTexture("/gui/gui.png"));
-			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+			int redLevel = NaNManager.redButtonLevel();
+			float green = 1.0F - (float)redLevel / 255.0F * 0.85F;
+			GL11.glColor4f(1.0F, green, green, 1.0F);
 			boolean var5 = var2 >= this.xPosition && var3 >= this.yPosition && var2 < this.xPosition + this.width && var3 < this.yPosition + this.height;
 			int var6 = this.getHoverState(var5);
 			this.drawTexturedModalRect(this.xPosition, this.yPosition, 0, 46 + var6 * 20, this.width / 2, this.height);

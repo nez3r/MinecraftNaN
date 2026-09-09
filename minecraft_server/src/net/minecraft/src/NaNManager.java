@@ -20,6 +20,11 @@ public final class NaNManager {
 	private static final int EFFECT_WINDOW_SHAKE = 16;
 	private static final int EFFECT_FAKE_ERROR = 17;
 	private static final int EFFECT_CHAT_SPAM = 18;
+	private static final int EFFECT_UI_JITTER = 19;
+	private static final int EFFECT_RED_BUTTONS = 20;
+	private static final int EFFECT_WINDOW_TITLE = 21;
+	private static final int EFFECT_DEBUG_CORRUPTION = 22;
+	private static final int EFFECT_MENU_SHAKE = 23;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
 	private final MinecraftServer server;
@@ -128,6 +133,11 @@ public final class NaNManager {
 		case EFFECT_WINDOW_SHAKE: return "shake";
 		case EFFECT_FAKE_ERROR: return "error";
 		case EFFECT_CHAT_SPAM: return "chatspam";
+		case EFFECT_UI_JITTER: return "jitter";
+		case EFFECT_RED_BUTTONS: return "redbuttons";
+		case EFFECT_WINDOW_TITLE: return "title";
+		case EFFECT_DEBUG_CORRUPTION: return "debug";
+		case EFFECT_MENU_SHAKE: return "menushake";
 		default: return "unknown";
 		}
 	}
@@ -150,6 +160,11 @@ public final class NaNManager {
 		if("shake".equalsIgnoreCase(name) || "windowshake".equalsIgnoreCase(name)) return EFFECT_WINDOW_SHAKE;
 		if("error".equalsIgnoreCase(name) || "fakeerror".equalsIgnoreCase(name)) return EFFECT_FAKE_ERROR;
 		if("chatspam".equalsIgnoreCase(name) || "spam".equalsIgnoreCase(name)) return EFFECT_CHAT_SPAM;
+		if("jitter".equalsIgnoreCase(name) || "ui".equalsIgnoreCase(name)) return EFFECT_UI_JITTER;
+		if("redbuttons".equalsIgnoreCase(name) || "buttons".equalsIgnoreCase(name)) return EFFECT_RED_BUTTONS;
+		if("title".equalsIgnoreCase(name) || "windowtitle".equalsIgnoreCase(name)) return EFFECT_WINDOW_TITLE;
+		if("debug".equalsIgnoreCase(name) || "f3".equalsIgnoreCase(name)) return EFFECT_DEBUG_CORRUPTION;
+		if("menushake".equalsIgnoreCase(name) || "exitshake".equalsIgnoreCase(name)) return EFFECT_MENU_SHAKE;
 		return 0;
 	}
 
@@ -168,20 +183,27 @@ public final class NaNManager {
 		if(effect == EFFECT_WINDOW_SHAKE) return 20 * 10;
 		if(effect == EFFECT_FAKE_ERROR) return 20 * 12;
 		if(effect == EFFECT_CHAT_SPAM) return 20 * 10;
+		if(effect == EFFECT_UI_JITTER || effect == EFFECT_RED_BUTTONS || effect == EFFECT_WINDOW_TITLE ||
+			effect == EFFECT_DEBUG_CORRUPTION || effect == EFFECT_MENU_SHAKE) return 0;
 		return 20 * 5;
 	}
 
 	private int nextEffectId(int effect) {
 		if(effect == EFFECT_RANDOM_LOOT) return 2;
 		if(effect == EFFECT_RED_TEXT) return EFFECT_RED_BARS;
-		if(effect == EFFECT_RED_BARS) return EFFECT_INVENTORY_CORRUPTION;
+		if(effect == EFFECT_RED_BARS) return EFFECT_UI_JITTER;
+		if(effect == EFFECT_UI_JITTER) return EFFECT_RED_BUTTONS;
+		if(effect == EFFECT_RED_BUTTONS) return EFFECT_WINDOW_TITLE;
+		if(effect == EFFECT_WINDOW_TITLE) return EFFECT_DEBUG_CORRUPTION;
+		if(effect == EFFECT_DEBUG_CORRUPTION) return EFFECT_MENU_SHAKE;
+		if(effect == EFFECT_MENU_SHAKE) return EFFECT_INVENTORY_CORRUPTION;
 		if(effect == EFFECT_INVENTORY_CORRUPTION) return nextConstrainedEffect();
 		if(effect == EFFECT_BLOCK_EVENT || effect == EFFECT_COBWEB || effect == EFFECT_INSULTS) {
 			return this.remainingBlockEvents == 0 && this.remainingCobwebEvents == 0 && this.remainingInsultEvents == 0
 				? EFFECT_INVENTORY_SHUFFLE : nextConstrainedEffect();
 		}
 		if(effect == EFFECT_FAKE_ERROR) return EFFECT_CHAT_SPAM;
-		if(effect == EFFECT_CHAT_SPAM) return EFFECT_RANDOM_LOOT;
+		if(effect == EFFECT_CHAT_SPAM) return EFFECT_UI_JITTER;
 		return effect + 1;
 	}
 
