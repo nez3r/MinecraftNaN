@@ -115,7 +115,14 @@ public final class NaNManager {
 			}
 		}
 		if("mst".equalsIgnoreCase(parts[0])) {
-			return "Next NaN event: " + effectName(this.nextEffect) + " (random order: 4-8 minutes)";
+			int remaining = Integer.MAX_VALUE;
+			for(int i = 0; i < this.ticksUntilEvent.length; ++i) {
+				if(this.activeEffectTicks[i] == 0 && this.ticksUntilEvent[i] < remaining) remaining = this.ticksUntilEvent[i];
+			}
+			return remaining == Integer.MAX_VALUE
+				? "NaN event active; countdown is paused"
+				: "Next NaN event: " + effectName(this.nextEffect) + " in " + formatTicks(remaining)
+					+ " (x" + this.intervalMultiplier + ")";
 		}
 		if("next".equalsIgnoreCase(parts[0])) {
 			this.startForAll(this.nextEffect);
@@ -132,6 +139,10 @@ public final class NaNManager {
 			return "Started NaN event: " + effectName(effect);
 		}
 		return "Usage: /mst, /event <name>, /next";
+	}
+
+	private String formatTicks(int ticks) {
+		return (ticks / 20) + "." + ((ticks % 20) * 5) + " seconds (" + ticks + " ticks)";
 	}
 
 	private void startForAll(int effect) {

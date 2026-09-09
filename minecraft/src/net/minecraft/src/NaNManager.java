@@ -256,7 +256,10 @@ public final class NaNManager {
 			}
 		}
 		if("mst".equalsIgnoreCase(parts[0])) {
-			return "Next NaN event: " + effectName(nextEffect) + " (random order: 4-8 minutes)";
+			return activeEffect != 0
+				? "NaN event active: " + effectName(activeEffect) + " (" + formatTicks(activeTicks) + " remaining)"
+				: "Next NaN event: " + effectName(nextEffect) + " in " + formatTicks(ticksUntilEvent)
+					+ " (x" + intervalMultiplier + ")";
 		}
 		if("next".equalsIgnoreCase(parts[0])) {
 			if(nextEffect == EFFECT_RANDOM_LOOT) startRandomLoot(mc);
@@ -286,6 +289,11 @@ public final class NaNManager {
 		}
 
 		return "Usage: /mst, /event <name>, /next";
+	}
+
+	private static String formatTicks(int ticks) {
+		if(ticks < 0) return "permanently";
+		return (ticks / 20) + "." + ((ticks % 20) * 5) + " seconds (" + ticks + " ticks)";
 	}
 
 	private static void showLocalInsult(Minecraft mc) {
