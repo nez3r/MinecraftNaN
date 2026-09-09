@@ -18,6 +18,7 @@ public class SoundPool {
 	public SoundPoolEntry addSound(String var1, File var2) {
 		try {
 			String var3 = var1;
+			String var6 = var1.substring(0, var1.indexOf(".")).replaceAll("/", ".");
 			var1 = var1.substring(0, var1.indexOf("."));
 			if(this.field_1657_b) {
 				while(Character.isDigit(var1.charAt(var1.length() - 1))) {
@@ -32,6 +33,12 @@ public class SoundPool {
 
 			SoundPoolEntry var4 = new SoundPoolEntry(var3, var2.toURI().toURL());
 			((List)this.nameToSoundPoolEntriesMapping.get(var1)).add(var4);
+			if(!var6.equals(var1)) {
+				if(!this.nameToSoundPoolEntriesMapping.containsKey(var6)) {
+					this.nameToSoundPoolEntriesMapping.put(var6, new ArrayList());
+				}
+				((List)this.nameToSoundPoolEntriesMapping.get(var6)).add(var4);
+			}
 			this.allSoundPoolEntries.add(var4);
 			++this.numberOfSoundPoolEntries;
 			return var4;

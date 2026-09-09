@@ -54,8 +54,9 @@ public class ThreadDownloadResources extends Thread {
 				}
 			}
 		} catch (Exception var13) {
-			this.loadResource(this.resourcesFolder, "");
 			var13.printStackTrace();
+		} finally {
+			this.loadResource(this.resourcesFolder, "");
 		}
 
 	}
@@ -66,6 +67,7 @@ public class ThreadDownloadResources extends Thread {
 
 	private void loadResource(File var1, String var2) {
 		File[] var3 = var1.listFiles();
+		if(var3 == null) return;
 
 		for(int var4 = 0; var4 < var3.length; ++var4) {
 			if(var3[var4].isDirectory()) {
