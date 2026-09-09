@@ -7,12 +7,13 @@ public final class NaNManager {
 	private static final int HORROR_EVENT = 2;
 	private static final int EFFECT_RED_TEXT = 4;
 	private static final int EFFECT_INVENTORY_CORRUPTION = 5;
+	private static final int EFFECT_RANDOM_LOOT = 6;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
 	private final MinecraftServer server;
 	private final Random random = new Random();
 	private int[] ticksUntilEvent = new int[0];
-	private int nextEffect = 2;
+	private int nextEffect = EFFECT_RANDOM_LOOT;
 	private boolean permanentEventStarted;
 
 	public NaNManager(MinecraftServer server) {
@@ -32,9 +33,12 @@ public final class NaNManager {
 			if(!world.playerEntities.isEmpty()) {
 				int effect = this.nextEffect;
 				int duration = effectDuration(effect);
+				int itemId = effect == EFFECT_RANDOM_LOOT ? randomItemId() : -1;
+				int itemCount = effect == EFFECT_RANDOM_LOOT ? this.random.nextInt(32) + 1 : 0;
+				if(effect == EFFECT_RANDOM_LOOT) giveItemToPlayers(itemId, itemCount, world);
 				this.server.configManager.sendPacketToAllPlayersInDimension(
-					new Packet201HorrorEvent(HORROR_EVENT, effect, duration), world.worldProvider.worldType);
-				this.nextEffect = this.nextEffect == EFFECT_INVENTORY_CORRUPTION ? EFFECT_INVENTORY_CORRUPTION : this.nextEffect + 1;
+					new Packet201HorrorEvent(HORROR_EVENT, effect, duration, itemId, itemCount), world.worldProvider.worldType);
+				this.nextEffect = nextEffectId(this.nextEffect);
 				if(effect == EFFECT_INVENTORY_CORRUPTION) this.permanentEventStarted = true;
 			}
 			this.ticksUntilEvent[i] = this.nextEffect == EFFECT_INVENTORY_CORRUPTION ? 20 * 60 * 2 : nextInterval();
@@ -55,7 +59,7 @@ public final class NaNManager {
 			this.startForAll(this.nextEffect);
 			String result = "Started NaN event: " + effectName(this.nextEffect);
 			if(this.nextEffect == EFFECT_INVENTORY_CORRUPTION) this.permanentEventStarted = true;
-			this.nextEffect = this.nextEffect == EFFECT_INVENTORY_CORRUPTION ? EFFECT_INVENTORY_CORRUPTION : this.nextEffect + 1;
+			this.nextEffect = nextEffectId(this.nextEffect);
 			return result;
 		}
 		if("event".equalsIgnoreCase(parts[0]) && parts.length > 1) {
@@ -69,7 +73,10 @@ public final class NaNManager {
 	}
 
 	private void startForAll(int effect) {
-		this.server.configManager.sendPacketToAllPlayers(new Packet201HorrorEvent(HORROR_EVENT, effect, effectDuration(effect)));
+		int itemId = effect == EFFECT_RANDOM_LOOT ? randomItemId() : -1;
+		int itemCount = effect == EFFECT_RANDOM_LOOT ? this.random.nextInt(32) + 1 : 0;
+		if(effect == EFFECT_RANDOM_LOOT) giveItemToPlayers(itemId, itemCount, null);
+		this.server.configManager.sendPacketToAllPlayers(new Packet201HorrorEvent(HORROR_EVENT, effect, effectDuration(effect), itemId, itemCount));
 	}
 
 	private String effectName(int effect) {
@@ -78,6 +85,7 @@ public final class NaNManager {
 		case 3: return "bleed";
 		case EFFECT_RED_TEXT: return "redtext";
 		case EFFECT_INVENTORY_CORRUPTION: return "inventory";
+		case EFFECT_RANDOM_LOOT: return "loot";
 		default: return "unknown";
 		}
 	}
@@ -87,6 +95,7 @@ public final class NaNManager {
 		if("bleed".equalsIgnoreCase(name) || "wireframe".equalsIgnoreCase(name)) return 3;
 		if("redtext".equalsIgnoreCase(name) || "red".equalsIgnoreCase(name)) return EFFECT_RED_TEXT;
 		if("inventory".equalsIgnoreCase(name) || "items".equalsIgnoreCase(name)) return EFFECT_INVENTORY_CORRUPTION;
+		if("loot".equalsIgnoreCase(name) || "item".equalsIgnoreCase(name)) return EFFECT_RANDOM_LOOT;
 		return 0;
 	}
 
@@ -94,6 +103,28 @@ public final class NaNManager {
 		if(effect == 3) return 20 * 7;
 		if(effect == EFFECT_RED_TEXT) return 20 * 15;
 		if(effect == EFFECT_INVENTORY_CORRUPTION) return 0;
+		if(effect == EFFECT_RANDOM_LOOT) return 0;
 		return 20 * 5;
+	}
+
+	private int nextEffectId(int effect) {
+		if(effect == EFFECT_RANDOM_LOOT) return 2;
+		if(effect == EFFECT_INVENTORY_CORRUPTION) return EFFECT_RANDOM_LOOT;
+		return effect + 1;
+	}
+
+	private int randomItemId() {
+		int itemId;
+		do {
+			itemId = this.random.nextInt(Item.itemsList.length);
+		} while(Item.itemsList[itemId] == null);
+		return itemId;
+	}
+
+	private void giveItemToPlayers(int itemId, int itemCount, WorldServer world) {
+		java.util.List players = world == null ? this.server.configManager.playerEntities : world.playerEntities;
+		for(int i = 0; i < players.size(); ++i) {
+			((EntityPlayerMP)players.get(i)).inventory.addItemStackToInventory(new ItemStack(itemId, itemCount, 0));
+		}
 	}
 }

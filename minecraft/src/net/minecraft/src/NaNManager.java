@@ -10,6 +10,7 @@ public final class NaNManager {
 	public static final int EFFECT_FRAME_BLEED = 3;
 	public static final int EFFECT_RED_TEXT = 4;
 	public static final int EFFECT_INVENTORY_CORRUPTION = 5;
+	public static final int EFFECT_RANDOM_LOOT = 6;
 	private static final int HORROR_EVENT = 2;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
@@ -17,7 +18,7 @@ public final class NaNManager {
 	private static int ticksUntilEvent;
 	private static int activeEffect;
 	private static int activeTicks;
-	private static int nextEffect = EFFECT_VOXEL_COLLAPSE;
+	private static int nextEffect = EFFECT_RANDOM_LOOT;
 	private static final Random RANDOM = new Random();
 
 	private NaNManager() {}
@@ -34,8 +35,9 @@ public final class NaNManager {
 		if(activeEffect == EFFECT_INVENTORY_CORRUPTION) return;
 		if(mc.theWorld.multiplayerWorld) return;
 		if(--ticksUntilEvent <= 0) {
-			startEffect(mc, nextEffect, effectDuration(nextEffect));
-			nextEffect = nextEffect == EFFECT_INVENTORY_CORRUPTION ? EFFECT_INVENTORY_CORRUPTION : nextEffect + 1;
+			if(nextEffect == EFFECT_RANDOM_LOOT) startRandomLoot(mc);
+			else startEffect(mc, nextEffect, effectDuration(nextEffect));
+			nextEffect = nextEffectId(nextEffect);
 			ticksUntilEvent = nextEffect == EFFECT_INVENTORY_CORRUPTION ? 20 * 60 * 2 : nextInterval();
 		}
 	}
@@ -44,15 +46,30 @@ public final class NaNManager {
 		return MIN_INTERVAL + RANDOM.nextInt(MAX_INTERVAL - MIN_INTERVAL + 1);
 	}
 
-	public static void handleEvent(Minecraft mc, int eventId, int effectId, int durationTicks) {
+	public static void handleEvent(Minecraft mc, int eventId, int effectId, int durationTicks, int itemId, int itemCount) {
 		if(eventId == HORROR_EVENT) {
-			startEffect(mc, effectId, durationTicks);
+			if(effectId == EFFECT_RANDOM_LOOT && !mc.theWorld.multiplayerWorld) giveItem(mc, itemId, itemCount);
+			else startEffect(mc, effectId, durationTicks);
 		}
+	}
+
+	private static void giveItem(Minecraft mc, int itemId, int itemCount) {
+		if(itemId >= 0 && itemId < Item.itemsList.length && Item.itemsList[itemId] != null && itemCount > 0) {
+			mc.thePlayer.inventory.addItemStackToInventory(new ItemStack(itemId, Math.min(itemCount, 32), 0));
+		}
+	}
+
+	private static void startRandomLoot(Minecraft mc) {
+		int itemId;
+		do {
+			itemId = RANDOM.nextInt(Item.itemsList.length);
+		} while(Item.itemsList[itemId] == null);
+		giveItem(mc, itemId, RANDOM.nextInt(32) + 1);
 	}
 
 	private static void startEffect(Minecraft mc, int effectId, int durationTicks) {
 		beginEffect(effectId, durationTicks);
-		if(isActive(effectId) && effectId != EFFECT_RED_TEXT) {
+		if(isActive(effectId) && (effectId == EFFECT_VOXEL_COLLAPSE || effectId == EFFECT_FRAME_BLEED)) {
 			mc.sndManager.playSoundFX("glitch.glitch1", 1.0F, 1.0F);
 		}
 	}
@@ -70,15 +87,17 @@ public final class NaNManager {
 			return "Next NaN event: " + effectName(nextEffect) + " (random order: 4-8 minutes)";
 		}
 		if("next".equalsIgnoreCase(parts[0])) {
-			startEffect(mc, nextEffect, effectDuration(nextEffect));
+			if(nextEffect == EFFECT_RANDOM_LOOT) startRandomLoot(mc);
+			else startEffect(mc, nextEffect, effectDuration(nextEffect));
 			String result = "Started NaN event: " + effectName(nextEffect);
-			nextEffect = nextEffect == EFFECT_INVENTORY_CORRUPTION ? EFFECT_INVENTORY_CORRUPTION : nextEffect + 1;
+			nextEffect = nextEffectId(nextEffect);
 			return result;
 		}
 		if("event".equalsIgnoreCase(parts[0]) && parts.length > 1) {
 			int effect = effectId(parts[1]);
 			if(effect == 0) return "Unknown NaN event: " + parts[1];
-			startEffect(mc, effect, effectDuration(effect));
+			if(effect == EFFECT_RANDOM_LOOT) startRandomLoot(mc);
+			else startEffect(mc, effect, effectDuration(effect));
 			return "Started NaN event: " + effectName(effect);
 		}
 		return "Usage: /mst, /event <name>, /next";
@@ -90,6 +109,7 @@ public final class NaNManager {
 		case EFFECT_FRAME_BLEED: return "bleed";
 		case EFFECT_RED_TEXT: return "redtext";
 		case EFFECT_INVENTORY_CORRUPTION: return "inventory";
+		case EFFECT_RANDOM_LOOT: return "loot";
 		default: return "unknown";
 		}
 	}
@@ -99,14 +119,21 @@ public final class NaNManager {
 		if("bleed".equalsIgnoreCase(name) || "wireframe".equalsIgnoreCase(name)) return EFFECT_FRAME_BLEED;
 		if("redtext".equalsIgnoreCase(name) || "red".equalsIgnoreCase(name)) return EFFECT_RED_TEXT;
 		if("inventory".equalsIgnoreCase(name) || "items".equalsIgnoreCase(name)) return EFFECT_INVENTORY_CORRUPTION;
+		if("loot".equalsIgnoreCase(name) || "item".equalsIgnoreCase(name)) return EFFECT_RANDOM_LOOT;
 		return 0;
 	}
 
 	private static int effectDuration(int effectId) {
 		if(effectId == EFFECT_FRAME_BLEED) return 20 * 7;
 		if(effectId == EFFECT_RED_TEXT) return 20 * 15;
-		if(effectId == EFFECT_INVENTORY_CORRUPTION) return 0;
+		if(effectId == EFFECT_INVENTORY_CORRUPTION || effectId == EFFECT_RANDOM_LOOT) return 0;
 		return 20 * 5;
+	}
+
+	private static int nextEffectId(int effectId) {
+		if(effectId == EFFECT_RANDOM_LOOT) return EFFECT_VOXEL_COLLAPSE;
+		if(effectId == EFFECT_INVENTORY_CORRUPTION) return EFFECT_RANDOM_LOOT;
+		return effectId + 1;
 	}
 
 	public static boolean isActive(int effectId) {

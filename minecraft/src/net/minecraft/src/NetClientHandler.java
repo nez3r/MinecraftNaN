@@ -348,7 +348,7 @@ public class NetClientHandler extends NetHandler {
 	}
 
 	public void handleHorrorEvent(Packet201HorrorEvent var1) {
-		NaNManager.handleEvent(this.mc, var1.eventId, var1.effectId, var1.durationTicks);
+		NaNManager.handleEvent(this.mc, var1.eventId, var1.effectId, var1.durationTicks, var1.itemId, var1.itemCount);
 	}
 
 	public void handleArmAnimation(Packet18Animation var1) {
