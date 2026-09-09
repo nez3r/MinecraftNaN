@@ -6,19 +6,21 @@ import net.minecraft.server.MinecraftServer;
 public final class NaNManager {
 	private static final int HORROR_EVENT = 2;
 	private static final int EFFECT_RED_TEXT = 4;
+	private static final int EFFECT_INVENTORY_CORRUPTION = 5;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
 	private final MinecraftServer server;
 	private final Random random = new Random();
 	private int[] ticksUntilEvent = new int[0];
 	private int nextEffect = 2;
+	private boolean permanentEventStarted;
 
 	public NaNManager(MinecraftServer server) {
 		this.server = server;
 	}
 
 	public void tick() {
-		if(this.server.configManager == null) return;
+		if(this.server.configManager == null || this.permanentEventStarted) return;
 		if(this.server.worldMngr == null) return;
 		if(this.ticksUntilEvent.length != this.server.worldMngr.length) {
 			this.ticksUntilEvent = new int[this.server.worldMngr.length];
@@ -32,9 +34,10 @@ public final class NaNManager {
 				int duration = effectDuration(effect);
 				this.server.configManager.sendPacketToAllPlayersInDimension(
 					new Packet201HorrorEvent(HORROR_EVENT, effect, duration), world.worldProvider.worldType);
-				this.nextEffect = this.nextEffect == EFFECT_RED_TEXT ? 2 : this.nextEffect + 1;
+				this.nextEffect = this.nextEffect == EFFECT_INVENTORY_CORRUPTION ? EFFECT_INVENTORY_CORRUPTION : this.nextEffect + 1;
+				if(effect == EFFECT_INVENTORY_CORRUPTION) this.permanentEventStarted = true;
 			}
-			this.ticksUntilEvent[i] = nextInterval();
+			this.ticksUntilEvent[i] = this.nextEffect == EFFECT_INVENTORY_CORRUPTION ? 20 * 60 * 2 : nextInterval();
 		}
 	}
 
@@ -51,13 +54,15 @@ public final class NaNManager {
 		if("next".equalsIgnoreCase(parts[0])) {
 			this.startForAll(this.nextEffect);
 			String result = "Started NaN event: " + effectName(this.nextEffect);
-			this.nextEffect = this.nextEffect == EFFECT_RED_TEXT ? 2 : this.nextEffect + 1;
+			if(this.nextEffect == EFFECT_INVENTORY_CORRUPTION) this.permanentEventStarted = true;
+			this.nextEffect = this.nextEffect == EFFECT_INVENTORY_CORRUPTION ? EFFECT_INVENTORY_CORRUPTION : this.nextEffect + 1;
 			return result;
 		}
 		if("event".equalsIgnoreCase(parts[0]) && parts.length > 1) {
 			int effect = effectId(parts[1]);
 			if(effect == 0) return "Unknown NaN event: " + parts[1];
 			this.startForAll(effect);
+			if(effect == EFFECT_INVENTORY_CORRUPTION) this.permanentEventStarted = true;
 			return "Started NaN event: " + effectName(effect);
 		}
 		return "Usage: /mst, /event <name>, /next";
@@ -72,6 +77,7 @@ public final class NaNManager {
 		case 2: return "voxel";
 		case 3: return "bleed";
 		case EFFECT_RED_TEXT: return "redtext";
+		case EFFECT_INVENTORY_CORRUPTION: return "inventory";
 		default: return "unknown";
 		}
 	}
@@ -80,12 +86,14 @@ public final class NaNManager {
 		if("voxel".equalsIgnoreCase(name) || "collapse".equalsIgnoreCase(name)) return 2;
 		if("bleed".equalsIgnoreCase(name) || "wireframe".equalsIgnoreCase(name)) return 3;
 		if("redtext".equalsIgnoreCase(name) || "red".equalsIgnoreCase(name)) return EFFECT_RED_TEXT;
+		if("inventory".equalsIgnoreCase(name) || "items".equalsIgnoreCase(name)) return EFFECT_INVENTORY_CORRUPTION;
 		return 0;
 	}
 
 	private int effectDuration(int effect) {
 		if(effect == 3) return 20 * 7;
 		if(effect == EFFECT_RED_TEXT) return 20 * 15;
+		if(effect == EFFECT_INVENTORY_CORRUPTION) return 0;
 		return 20 * 5;
 	}
 }
