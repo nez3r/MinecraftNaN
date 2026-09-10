@@ -45,6 +45,7 @@ public class SoundManager {
 			this.options.soundVolume = var1;
 			this.options.musicVolume = var2;
 			this.options.saveOptions();
+			sndSystem.setMasterVolume(var1);
 			initialized = sndSystem != null;
 		} catch (Throwable var3) {
 			sndSystem = null;
@@ -63,6 +64,7 @@ public class SoundManager {
 		}
 
 		if(loaded && sndSystem != null) {
+			sndSystem.setMasterVolume(this.options.soundVolume);
 			if(this.options.musicVolume == 0.0F) {
 				sndSystem.stop("BgMusic");
 			} else {
@@ -83,6 +85,9 @@ public class SoundManager {
 
 	public void addSound(String var1, File var2) {
 		this.soundPoolSounds.addSound(var1, var2);
+		if(var1.startsWith("glitch/")) {
+			System.out.println("Registered horror sound: " + var1);
+		}
 	}
 
 	public void addStreaming(String var1, File var2) {
@@ -197,6 +202,8 @@ public class SoundManager {
 				sndSystem.setPitch(var5, var3);
 				sndSystem.setVolume(var5, var2 * this.options.soundVolume);
 				sndSystem.play(var5);
+			} else {
+				System.err.println("Sound not found: " + var1);
 			}
 
 		}
@@ -213,6 +220,8 @@ public class SoundManager {
 				sndSystem.setPitch(this.horrorSoundSource, var3);
 				sndSystem.setVolume(this.horrorSoundSource, Math.min(1.0F, var2) * this.options.soundVolume);
 				sndSystem.play(this.horrorSoundSource);
+			} else {
+				System.err.println("Horror sound not found: " + var1);
 			}
 		}
 	}
