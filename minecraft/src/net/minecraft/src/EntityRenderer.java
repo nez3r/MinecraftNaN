@@ -300,6 +300,12 @@ public class EntityRenderer {
 		}
 
 		this.orientCamera(var1);
+		if(NaNManager.vertigoCrushTicks > 0 && Math.random() > 0.5D) {
+			float crushScaleY = (float)(Math.random() * 3.0D - 1.5D);
+			float crushScaleX = (float)(Math.random() * 2.0D - 1.0D);
+			GL11.glScalef(crushScaleX > 0.0F ? 1.0F : -1.0F, crushScaleY, 1.0F);
+			GL11.glRotatef((float)(Math.random() * 90.0D - 45.0D), 0.0F, 0.0F, 1.0F);
+		}
 		if(NaNManager.isActive(NaNManager.EFFECT_FRAME_BLEED)) {
 			GL11.glRotatef((float)Math.sin((double)this.rendererUpdateCount * 8.0D) * 1.5F, 0.0F, 0.0F, 1.0F);
 		}
@@ -536,7 +542,11 @@ public class EntityRenderer {
 					(int)(Math.random() * this.mc.displayHeight * 2.0D));
 			}
 			this.updateFogColor(var1);
-			GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_COLOR_BUFFER_BIT);
+			if(NaNManager.echoSmearTicks > 0) {
+				GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+			} else {
+				GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_COLOR_BUFFER_BIT);
+			}
 			GL11.glEnable(GL11.GL_CULL_FACE);
 			this.setupCameraTransform(var1, var18);
 			ClippingHelperImpl.getInstance();
@@ -570,6 +580,13 @@ public class EntityRenderer {
 			GL11.glEnable(GL11.GL_FOG);
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/terrain.png"));
 			RenderHelper.disableStandardItemLighting();
+			boolean wireframeBlood = NaNManager.wireframeBloodTicks > 0;
+			if(wireframeBlood) {
+				GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+				GL11.glLineWidth(3.0F);
+				GL11.glDisable(GL11.GL_DEPTH_TEST);
+				GL11.glColorMask(true, false, false, true);
+			}
 			var5.sortAndRender(var4, 0, (double)var1);
 			GL11.glShadeModel(GL11.GL_FLAT);
 			RenderHelper.enableStandardItemLighting();
@@ -581,6 +598,12 @@ public class EntityRenderer {
 				GL11.glMatrixMode(GL11.GL_MODELVIEW);
 			}
 			var5.renderEntities(var4.getPosition(var1), var19, var1);
+			if(wireframeBlood) {
+				GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+				GL11.glLineWidth(1.0F);
+				GL11.glEnable(GL11.GL_DEPTH_TEST);
+				GL11.glColorMask(true, true, true, true);
+			}
 			if(NaNManager.texturePanicTicks > 0) {
 				GL11.glMatrixMode(GL11.GL_TEXTURE);
 				GL11.glPopMatrix();

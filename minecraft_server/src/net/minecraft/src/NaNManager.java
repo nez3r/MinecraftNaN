@@ -41,6 +41,11 @@ public final class NaNManager {
 	private static final int EFFECT_LOGIC_XOR = 38;
 	private static final int EFFECT_TEXTURE_PANIC = 39;
 	private static final int EFFECT_TV_STATIC = 40;
+	private static final int EFFECT_ECHO_SMEAR = 41;
+	private static final int EFFECT_SUBLIMINAL_FLASH = 42;
+	private static final int EFFECT_VOID_SLICES = 43;
+	private static final int EFFECT_WIREFRAME_BLOOD = 44;
+	private static final int EFFECT_VERTIGO_CRUSH = 45;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
 	private final MinecraftServer server;
@@ -226,6 +231,11 @@ public final class NaNManager {
 		case EFFECT_LOGIC_XOR: return "logic_xor";
 		case EFFECT_TEXTURE_PANIC: return "texture_panic";
 		case EFFECT_TV_STATIC: return "tv_static";
+		case EFFECT_ECHO_SMEAR: return "echo_smear";
+		case EFFECT_SUBLIMINAL_FLASH: return "subliminal_flash";
+		case EFFECT_VOID_SLICES: return "void_slices";
+		case EFFECT_WIREFRAME_BLOOD: return "wireframe_blood";
+		case EFFECT_VERTIGO_CRUSH: return "vertigo_crush";
 		default: return "unknown";
 		}
 	}
@@ -270,6 +280,11 @@ public final class NaNManager {
 		if("logic_xor".equalsIgnoreCase(name) || "xor".equalsIgnoreCase(name)) return EFFECT_LOGIC_XOR;
 		if("texture_panic".equalsIgnoreCase(name) || "texturepanic".equalsIgnoreCase(name)) return EFFECT_TEXTURE_PANIC;
 		if("tv_static".equalsIgnoreCase(name) || "static".equalsIgnoreCase(name)) return EFFECT_TV_STATIC;
+		if("echo_smear".equalsIgnoreCase(name) || "echo".equalsIgnoreCase(name)) return EFFECT_ECHO_SMEAR;
+		if("subliminal_flash".equalsIgnoreCase(name) || "flash".equalsIgnoreCase(name)) return EFFECT_SUBLIMINAL_FLASH;
+		if("void_slices".equalsIgnoreCase(name) || "void".equalsIgnoreCase(name)) return EFFECT_VOID_SLICES;
+		if("wireframe_blood".equalsIgnoreCase(name) || "bloodwire".equalsIgnoreCase(name)) return EFFECT_WIREFRAME_BLOOD;
+		if("vertigo_crush".equalsIgnoreCase(name) || "vertigo".equalsIgnoreCase(name)) return EFFECT_VERTIGO_CRUSH;
 		return 0;
 	}
 
@@ -298,7 +313,11 @@ public final class NaNManager {
 		if(effect == EFFECT_FATAL_DUMP) return 20 * 12;
 		if(effect == EFFECT_VIEWPORT_STROKE || effect == EFFECT_DEPTH_DECAY ||
 			effect == EFFECT_PIXEL_MELT || effect == EFFECT_LOGIC_XOR ||
-			effect == EFFECT_TEXTURE_PANIC || effect == EFFECT_TV_STATIC) return 20 * 10;
+			effect == EFFECT_TV_STATIC) return 20 * 10;
+		if(effect == EFFECT_TEXTURE_PANIC) return 20 * 60;
+		if(effect == EFFECT_ECHO_SMEAR || effect == EFFECT_SUBLIMINAL_FLASH ||
+			effect == EFFECT_VOID_SLICES || effect == EFFECT_WIREFRAME_BLOOD ||
+			effect == EFFECT_VERTIGO_CRUSH) return 20 * 10;
 		if(effect == EFFECT_FAKE_ERROR) return 20 * 12;
 		if(effect == EFFECT_CHAT_SPAM) return 20 * 10;
 		if(effect == EFFECT_UI_JITTER || effect == EFFECT_RED_BUTTONS || effect == EFFECT_WINDOW_TITLE ||
@@ -330,6 +349,11 @@ public final class NaNManager {
 		if(effect == EFFECT_LOGIC_XOR) return EFFECT_TEXTURE_PANIC;
 		if(effect == EFFECT_TEXTURE_PANIC) return EFFECT_TV_STATIC;
 		if(effect == EFFECT_TV_STATIC) return EFFECT_INVENTORY_CORRUPTION;
+		if(effect == EFFECT_ECHO_SMEAR) return EFFECT_SUBLIMINAL_FLASH;
+		if(effect == EFFECT_SUBLIMINAL_FLASH) return EFFECT_VOID_SLICES;
+		if(effect == EFFECT_VOID_SLICES) return EFFECT_WIREFRAME_BLOOD;
+		if(effect == EFFECT_WIREFRAME_BLOOD) return EFFECT_VERTIGO_CRUSH;
+		if(effect == EFFECT_VERTIGO_CRUSH) return EFFECT_INVENTORY_CORRUPTION;
 		if(effect == EFFECT_FOV_SPIKE) return EFFECT_TEARING;
 		if(effect == EFFECT_INVENTORY_CORRUPTION) return nextConstrainedEffect();
 		if(effect == EFFECT_BLOCK_EVENT || effect == EFFECT_COBWEB || effect == EFFECT_INSULTS) {
