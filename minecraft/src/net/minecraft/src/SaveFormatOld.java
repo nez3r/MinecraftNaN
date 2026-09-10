@@ -2,6 +2,7 @@ package net.minecraft.src;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,26 +49,35 @@ public class SaveFormatOld implements ISaveFormat {
 			NBTTagCompound var5;
 			if(var3.exists()) {
 				try {
-					var4 = CompressedStreamTools.func_1138_a(new FileInputStream(var3));
+					var4 = this.readLevelData(var3);
 					var5 = var4.getCompoundTag("Data");
 					return new WorldInfo(var5);
 				} catch (Exception var7) {
-					var7.printStackTrace();
+					System.err.println("Unable to read world metadata: " + var3.getPath());
 				}
 			}
 
 			var3 = new File(var2, "level.dat_old");
 			if(var3.exists()) {
 				try {
-					var4 = CompressedStreamTools.func_1138_a(new FileInputStream(var3));
+					var4 = this.readLevelData(var3);
 					var5 = var4.getCompoundTag("Data");
 					return new WorldInfo(var5);
 				} catch (Exception var6) {
-					var6.printStackTrace();
+					System.err.println("Unable to read world metadata backup: " + var3.getPath());
 				}
 			}
 
 			return null;
+		}
+	}
+
+	private NBTTagCompound readLevelData(File var1) throws IOException {
+		FileInputStream var2 = new FileInputStream(var1);
+		try {
+			return CompressedStreamTools.func_1138_a(var2);
+		} finally {
+			var2.close();
 		}
 	}
 
