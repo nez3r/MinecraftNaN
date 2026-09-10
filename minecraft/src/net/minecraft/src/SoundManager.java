@@ -30,6 +30,7 @@ public class SoundManager {
 	}
 
 	private void tryToSetLibraryAndCodecs() {
+		boolean initialized = false;
 		try {
 			float var1 = this.options.soundVolume;
 			float var2 = this.options.musicVolume;
@@ -44,12 +45,16 @@ public class SoundManager {
 			this.options.soundVolume = var1;
 			this.options.musicVolume = var2;
 			this.options.saveOptions();
+			initialized = sndSystem != null;
 		} catch (Throwable var3) {
-			var3.printStackTrace();
-			System.err.println("error linking with the LibraryJavaSound plug-in");
+			sndSystem = null;
+			System.err.println("Unable to initialize game audio: " + var3);
 		}
 
-		loaded = true;
+		loaded = initialized;
+		if(!loaded) {
+			System.err.println("Audio is disabled until the sound system can be initialized.");
+		}
 	}
 
 	public void onSoundOptionsChanged() {
@@ -57,7 +62,7 @@ public class SoundManager {
 			this.tryToSetLibraryAndCodecs();
 		}
 
-		if(loaded) {
+		if(loaded && sndSystem != null) {
 			if(this.options.musicVolume == 0.0F) {
 				sndSystem.stop("BgMusic");
 			} else {
@@ -68,9 +73,11 @@ public class SoundManager {
 	}
 
 	public void closeMinecraft() {
-		if(loaded) {
+		if(loaded && sndSystem != null) {
 			sndSystem.cleanup();
 		}
+		sndSystem = null;
+		loaded = false;
 
 	}
 
