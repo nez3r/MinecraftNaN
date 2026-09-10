@@ -33,6 +33,9 @@ public final class NaNManager {
 	public static final int EFFECT_TEXT_CORRUPTION = 25;
 	public static final int EFFECT_LOG_CORRUPTION = 27;
 	public static final int EFFECT_TERRAIN_CORRUPTION = 28;
+	public static final int EFFECT_WIREFRAME = 29;
+	public static final int EFFECT_COLOR_MASK = 30;
+	public static final int EFFECT_FOV_SPIKE = 31;
 	private static final int HORROR_EVENT = 2;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
@@ -61,6 +64,12 @@ public final class NaNManager {
 	private static int debugCorruptionTicks;
 	private static String originalWindowTitle = "NaN";
 	private static final Random RANDOM = new Random();
+	public static int wireframeTicks;
+	public static int colorMaskTicks;
+	public static int fovSpikeTicks;
+	private static boolean colorMaskRed;
+	private static boolean colorMaskGreen;
+	private static boolean colorMaskBlue;
 
 	private NaNManager() {}
 
@@ -107,6 +116,9 @@ public final class NaNManager {
 				mc.gameSettings.renderDistance = previousRenderDistance;
 				previousRenderDistance = -1;
 			}
+			wireframeTicks = activeEffect == EFFECT_WIREFRAME ? activeTicks : 0;
+			colorMaskTicks = activeEffect == EFFECT_COLOR_MASK ? activeTicks : 0;
+			fovSpikeTicks = activeEffect == EFFECT_FOV_SPIKE ? activeTicks : 0;
 			if(finishedEffect == EFFECT_WINDOW_SHAKE && windowPositionSaved) restoreWindowPosition();
 			if(finishedEffect == EFFECT_RED_TEXT && fakeErrorInsults) fakeErrorInsults = false;
 			if(finishedEffect == EFFECT_RED_BARS) mc.theWorld.setWorldTime(mc.theWorld.getWorldTime() - mc.theWorld.getWorldTime() % 24000L + 13000L);
@@ -220,7 +232,7 @@ public final class NaNManager {
 	}
 
 	public static void beginEffect(int effectId, int durationTicks) {
-		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_TERRAIN_CORRUPTION) return;
+		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_FOV_SPIKE) return;
 		if(effectId == EFFECT_UI_JITTER) permanentJitter = true;
 		if(effectId == EFFECT_RED_BUTTONS) permanentRedButtons = true;
 		if(effectId == EFFECT_WINDOW_TITLE) permanentWindowTitle = true;
@@ -229,9 +241,21 @@ public final class NaNManager {
 		if(effectId == EFFECT_INVENTORY_CORRUPTION) permanentInventoryCorruption = true;
 		activeEffect = effectId;
 		activeTicks = durationTicks == 0 ? -1 : Math.max(1, durationTicks);
+		wireframeTicks = effectId == EFFECT_WIREFRAME ? activeTicks : 0;
+		colorMaskTicks = effectId == EFFECT_COLOR_MASK ? activeTicks : 0;
+		fovSpikeTicks = effectId == EFFECT_FOV_SPIKE ? activeTicks : 0;
+		if(effectId == EFFECT_COLOR_MASK) {
+			colorMaskRed = RANDOM.nextBoolean();
+			colorMaskGreen = RANDOM.nextBoolean();
+			colorMaskBlue = RANDOM.nextBoolean();
+			if(!colorMaskRed && !colorMaskGreen && !colorMaskBlue) colorMaskRed = true;
+		}
 	}
 
 	public static boolean isGuiJitterActive() { return permanentJitter; }
+	public static void applyColorMask() {
+		if(colorMaskTicks > 0) GL11.glColorMask(colorMaskRed, colorMaskGreen, colorMaskBlue, true);
+	}
 	public static void applyGuiJitter() {
 		if(permanentJitter) GL11.glTranslatef(RANDOM.nextInt(7) - 3, RANDOM.nextInt(7) - 3, 0.0F);
 	}
@@ -388,13 +412,16 @@ public final class NaNManager {
 		case EFFECT_TEXT_CORRUPTION: return "text";
 		case EFFECT_LOG_CORRUPTION: return "log";
 		case EFFECT_TERRAIN_CORRUPTION: return "terrain";
+		case EFFECT_WIREFRAME: return "wireframe";
+		case EFFECT_COLOR_MASK: return "colormask";
+		case EFFECT_FOV_SPIKE: return "fovspike";
 		default: return "unknown";
 		}
 	}
 
 	private static int effectId(String name) {
 		if("voxel".equalsIgnoreCase(name) || "collapse".equalsIgnoreCase(name)) return EFFECT_VOXEL_COLLAPSE;
-		if("bleed".equalsIgnoreCase(name) || "wireframe".equalsIgnoreCase(name)) return EFFECT_FRAME_BLEED;
+		if("bleed".equalsIgnoreCase(name)) return EFFECT_FRAME_BLEED;
 		if("redtext".equalsIgnoreCase(name) || "red".equalsIgnoreCase(name)) return EFFECT_RED_TEXT;
 		if("inventory".equalsIgnoreCase(name) || "items".equalsIgnoreCase(name)) return EFFECT_INVENTORY_CORRUPTION;
 		if("loot".equalsIgnoreCase(name) || "item".equalsIgnoreCase(name)) return EFFECT_RANDOM_LOOT;
@@ -419,6 +446,9 @@ public final class NaNManager {
 		if("text".equalsIgnoreCase(name) || "textcorruption".equalsIgnoreCase(name) || "symbols".equalsIgnoreCase(name)) return EFFECT_TEXT_CORRUPTION;
 		if("log".equalsIgnoreCase(name) || "logcorruption".equalsIgnoreCase(name)) return EFFECT_LOG_CORRUPTION;
 		if("terrain".equalsIgnoreCase(name) || "texture".equalsIgnoreCase(name)) return EFFECT_TERRAIN_CORRUPTION;
+		if("wireframe".equalsIgnoreCase(name) || "wire".equalsIgnoreCase(name)) return EFFECT_WIREFRAME;
+		if("colormask".equalsIgnoreCase(name) || "rgb".equalsIgnoreCase(name)) return EFFECT_COLOR_MASK;
+		if("fovspike".equalsIgnoreCase(name) || "fov".equalsIgnoreCase(name)) return EFFECT_FOV_SPIKE;
 		return 0;
 	}
 
@@ -438,6 +468,9 @@ public final class NaNManager {
 		if(effectId == EFFECT_TEXT_CORRUPTION) return 20 * 30;
 		if(effectId == EFFECT_LOG_CORRUPTION) return 20 * 15;
 		if(effectId == EFFECT_TERRAIN_CORRUPTION) return 20 * 15;
+		if(effectId == EFFECT_WIREFRAME) return 100 + RANDOM.nextInt(201);
+		if(effectId == EFFECT_COLOR_MASK) return 20 * 12;
+		if(effectId == EFFECT_FOV_SPIKE) return 20 * 12;
 		if(effectId == EFFECT_FAKE_ERROR) return 20 * 12;
 		if(effectId == EFFECT_CHAT_SPAM) return 20 * 10;
 		if(effectId == EFFECT_UI_JITTER || effectId == EFFECT_RED_BUTTONS || effectId == EFFECT_WINDOW_TITLE ||
@@ -457,7 +490,10 @@ public final class NaNManager {
 		if(effectId == EFFECT_CAMERA_SHAKE) return EFFECT_TEXT_CORRUPTION;
 		if(effectId == EFFECT_TEXT_CORRUPTION) return EFFECT_LOG_CORRUPTION;
 		if(effectId == EFFECT_LOG_CORRUPTION) return EFFECT_TERRAIN_CORRUPTION;
-		if(effectId == EFFECT_TERRAIN_CORRUPTION) return EFFECT_INVENTORY_CORRUPTION;
+		if(effectId == EFFECT_TERRAIN_CORRUPTION) return EFFECT_WIREFRAME;
+		if(effectId == EFFECT_WIREFRAME) return EFFECT_COLOR_MASK;
+		if(effectId == EFFECT_COLOR_MASK) return EFFECT_FOV_SPIKE;
+		if(effectId == EFFECT_FOV_SPIKE) return EFFECT_INVENTORY_CORRUPTION;
 		if(effectId == EFFECT_INVENTORY_CORRUPTION) return EFFECT_BLOCK_EVENT;
 		if(effectId == EFFECT_COBWEB) return EFFECT_INSULTS;
 		if(effectId == EFFECT_INSULTS) return EFFECT_INVENTORY_SHUFFLE;

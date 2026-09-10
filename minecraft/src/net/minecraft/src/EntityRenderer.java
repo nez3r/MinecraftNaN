@@ -146,6 +146,9 @@ public class EntityRenderer {
 			var3 /= (1.0F - 500.0F / (var4 + 500.0F)) * 2.0F + 1.0F;
 		}
 
+		if(NaNManager.fovSpikeTicks > 0 && NaNManager.fovSpikeTicks % 20 < 6) {
+			var3 = 10.0F + (float)(Math.random() * 150.0D);
+		}
 		return var3 + this.field_22221_y + (this.field_22222_x - this.field_22221_y) * var1;
 	}
 
@@ -395,7 +398,9 @@ public class EntityRenderer {
 
 				this.field_28133_I = System.nanoTime();
 				if(!this.mc.gameSettings.hideGUI || this.mc.currentScreen != null) {
+					NaNManager.applyColorMask();
 					this.mc.ingameGUI.renderGameOverlay(var1, this.mc.currentScreen != null, var16, var17);
+					GL11.glColorMask(true, true, true, true);
 				}
 			} else {
 				GL11.glViewport(0, 0, this.mc.displayWidth, this.mc.displayHeight);
@@ -439,6 +444,11 @@ public class EntityRenderer {
 	public void renderWorld(float var1, long var2) {
 		GL11.glEnable(GL11.GL_CULL_FACE);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		boolean wireframe = NaNManager.wireframeTicks > 0;
+		if(wireframe) {
+			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+			GL11.glLineWidth(1.0F + (float)(Math.random() * 3.0D));
+		}
 		if(this.mc.renderViewEntity == null) {
 			this.mc.renderViewEntity = this.mc.thePlayer;
 		}
@@ -467,6 +477,7 @@ public class EntityRenderer {
 				} else {
 					GL11.glColorMask(true, false, false, false);
 				}
+				NaNManager.applyColorMask();
 			}
 
 			GL11.glViewport(0, 0, this.mc.displayWidth, this.mc.displayHeight);
@@ -540,6 +551,7 @@ public class EntityRenderer {
 				} else {
 					GL11.glColorMask(true, true, true, true);
 				}
+				NaNManager.applyColorMask();
 
 				if(var16 > 0) {
 					var5.renderAllRenderLists(1, (double)var1);
@@ -577,11 +589,21 @@ public class EntityRenderer {
 			}
 
 			if(!this.mc.gameSettings.anaglyph) {
+				if(wireframe) {
+					GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+					GL11.glLineWidth(1.0F);
+				}
+				GL11.glColorMask(true, true, true, true);
 				return;
 			}
 		}
 
 		GL11.glColorMask(true, true, true, false);
+		if(wireframe) {
+			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+			GL11.glLineWidth(1.0F);
+		}
+		GL11.glColorMask(true, true, true, true);
 	}
 
 	private void addRainParticles() {

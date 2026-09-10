@@ -29,6 +29,9 @@ public final class NaNManager {
 	private static final int EFFECT_TEXT_CORRUPTION = 25;
 	private static final int EFFECT_LOG_CORRUPTION = 27;
 	private static final int EFFECT_TERRAIN_CORRUPTION = 28;
+	private static final int EFFECT_WIREFRAME = 29;
+	private static final int EFFECT_COLOR_MASK = 30;
+	private static final int EFFECT_FOV_SPIKE = 31;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
 	private final MinecraftServer server;
@@ -202,13 +205,16 @@ public final class NaNManager {
 		case EFFECT_TEXT_CORRUPTION: return "text";
 		case EFFECT_LOG_CORRUPTION: return "log";
 		case EFFECT_TERRAIN_CORRUPTION: return "terrain";
+		case EFFECT_WIREFRAME: return "wireframe";
+		case EFFECT_COLOR_MASK: return "colormask";
+		case EFFECT_FOV_SPIKE: return "fovspike";
 		default: return "unknown";
 		}
 	}
 
 	private int effectId(String name) {
 		if("voxel".equalsIgnoreCase(name) || "collapse".equalsIgnoreCase(name)) return 2;
-		if("bleed".equalsIgnoreCase(name) || "wireframe".equalsIgnoreCase(name)) return 3;
+		if("bleed".equalsIgnoreCase(name)) return 3;
 		if("redtext".equalsIgnoreCase(name) || "red".equalsIgnoreCase(name)) return EFFECT_RED_TEXT;
 		if("inventory".equalsIgnoreCase(name) || "items".equalsIgnoreCase(name)) return EFFECT_INVENTORY_CORRUPTION;
 		if("loot".equalsIgnoreCase(name) || "item".equalsIgnoreCase(name)) return EFFECT_RANDOM_LOOT;
@@ -233,6 +239,9 @@ public final class NaNManager {
 		if("text".equalsIgnoreCase(name) || "textcorruption".equalsIgnoreCase(name) || "symbols".equalsIgnoreCase(name)) return EFFECT_TEXT_CORRUPTION;
 		if("log".equalsIgnoreCase(name) || "logcorruption".equalsIgnoreCase(name)) return EFFECT_LOG_CORRUPTION;
 		if("terrain".equalsIgnoreCase(name) || "texture".equalsIgnoreCase(name)) return EFFECT_TERRAIN_CORRUPTION;
+		if("wireframe".equalsIgnoreCase(name) || "wire".equalsIgnoreCase(name)) return EFFECT_WIREFRAME;
+		if("colormask".equalsIgnoreCase(name) || "rgb".equalsIgnoreCase(name)) return EFFECT_COLOR_MASK;
+		if("fovspike".equalsIgnoreCase(name) || "fov".equalsIgnoreCase(name)) return EFFECT_FOV_SPIKE;
 		return 0;
 	}
 
@@ -253,6 +262,9 @@ public final class NaNManager {
 		if(effect == EFFECT_TEXT_CORRUPTION) return 20 * 30;
 		if(effect == EFFECT_LOG_CORRUPTION) return 20 * 15;
 		if(effect == EFFECT_TERRAIN_CORRUPTION) return 20 * 15;
+		if(effect == EFFECT_WIREFRAME) return 100 + this.random.nextInt(201);
+		if(effect == EFFECT_COLOR_MASK) return 20 * 12;
+		if(effect == EFFECT_FOV_SPIKE) return 20 * 12;
 		if(effect == EFFECT_FAKE_ERROR) return 20 * 12;
 		if(effect == EFFECT_CHAT_SPAM) return 20 * 10;
 		if(effect == EFFECT_UI_JITTER || effect == EFFECT_RED_BUTTONS || effect == EFFECT_WINDOW_TITLE ||
@@ -272,7 +284,10 @@ public final class NaNManager {
 		if(effect == EFFECT_CAMERA_SHAKE) return EFFECT_TEXT_CORRUPTION;
 		if(effect == EFFECT_TEXT_CORRUPTION) return EFFECT_LOG_CORRUPTION;
 		if(effect == EFFECT_LOG_CORRUPTION) return EFFECT_TERRAIN_CORRUPTION;
-		if(effect == EFFECT_TERRAIN_CORRUPTION) return EFFECT_INVENTORY_CORRUPTION;
+		if(effect == EFFECT_TERRAIN_CORRUPTION) return EFFECT_WIREFRAME;
+		if(effect == EFFECT_WIREFRAME) return EFFECT_COLOR_MASK;
+		if(effect == EFFECT_COLOR_MASK) return EFFECT_FOV_SPIKE;
+		if(effect == EFFECT_FOV_SPIKE) return EFFECT_INVENTORY_CORRUPTION;
 		if(effect == EFFECT_INVENTORY_CORRUPTION) return nextConstrainedEffect();
 		if(effect == EFFECT_BLOCK_EVENT || effect == EFFECT_COBWEB || effect == EFFECT_INSULTS) {
 			return this.remainingBlockEvents == 0 && this.remainingCobwebEvents == 0 && this.remainingInsultEvents == 0
