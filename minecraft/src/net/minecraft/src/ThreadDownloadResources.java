@@ -100,9 +100,15 @@ public class ThreadDownloadResources extends Thread {
 				var8.getParentFile().mkdirs();
 				String var9 = var2.replaceAll(" ", "%20");
 				File var10 = new File(var8.getPath() + ".tmp");
-				this.downloadResource(new URL(var1, var9), var10, var3);
-				if(!isOggResource(var10, var7)) {
-					throw new IOException("Downloaded resource is not a valid Ogg file: " + var10);
+				try {
+					this.downloadResource(new URL(var1, var9), var10, var3);
+					if(!isOggResource(var10, var7)) {
+						if(var10.exists()) var10.delete();
+						return;
+					}
+				} catch (IOException var11) {
+					if(var10.exists()) var10.delete();
+					return;
 				}
 				if(var8.exists() && !var8.delete()) {
 					throw new IOException("Could not replace cached resource " + var8);
