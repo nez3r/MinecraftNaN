@@ -213,6 +213,7 @@ public final class NaNManager {
 	}
 
 	private int effectId(String name) {
+		name = name.trim();
 		if("voxel".equalsIgnoreCase(name) || "collapse".equalsIgnoreCase(name)) return 2;
 		if("bleed".equalsIgnoreCase(name)) return 3;
 		if("redtext".equalsIgnoreCase(name) || "red".equalsIgnoreCase(name)) return EFFECT_RED_TEXT;
