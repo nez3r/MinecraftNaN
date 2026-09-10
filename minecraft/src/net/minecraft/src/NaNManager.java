@@ -103,7 +103,7 @@ public final class NaNManager {
 
 	public static void tick(Minecraft mc) {
 		if(lastWorld != mc.theWorld) {
-			if(activeEffect == EFFECT_TERRAIN_CORRUPTION || activeEffect == EFFECT_FOV_SPIKE) mc.sndManager.stopHorrorSound();
+			if(isHorrorSoundEffect(activeEffect)) mc.sndManager.stopHorrorSound();
 			if(lastWorld != null && mc.theWorld == null && menuShakeArmed) {
 				menuShakeTicks = 20 * 5;
 				saveWindowPosition();
@@ -164,7 +164,7 @@ public final class NaNManager {
 			if(finishedEffect == EFFECT_WINDOW_SHAKE && windowPositionSaved) restoreWindowPosition();
 			if(finishedEffect == EFFECT_RED_TEXT && fakeErrorInsults) fakeErrorInsults = false;
 			if(finishedEffect == EFFECT_RED_BARS) mc.theWorld.setWorldTime(mc.theWorld.getWorldTime() - mc.theWorld.getWorldTime() % 24000L + 13000L);
-			if(finishedEffect == EFFECT_TERRAIN_CORRUPTION || finishedEffect == EFFECT_FOV_SPIKE) mc.sndManager.stopHorrorSound();
+			if(isHorrorSoundEffect(finishedEffect)) mc.sndManager.stopHorrorSound();
 		}
 		if(delayedInsultTicks > 0 && --delayedInsultTicks == 0) {
 			activeEffect = EFFECT_RED_TEXT;
@@ -267,10 +267,25 @@ public final class NaNManager {
 		}
 		if(effectId == EFFECT_BLOCK_EVENT) spawnLocalBlocks(mc);
 		if(effectId == EFFECT_COBWEB) spawnLocalCobweb(mc);
-		if(isActive(effectId) && (effectId == EFFECT_VOXEL_COLLAPSE || effectId == EFFECT_FRAME_BLEED || effectId == EFFECT_RED_BARS || effectId == EFFECT_TERRAIN_CORRUPTION || effectId == EFFECT_FOV_SPIKE)) {
-			if(effectId == EFFECT_TERRAIN_CORRUPTION || effectId == EFFECT_FOV_SPIKE) mc.sndManager.playHorrorSound("glitch.glitch14", 1.0F, 1.0F);
+		if(isActive(effectId) && (effectId == EFFECT_VOXEL_COLLAPSE || effectId == EFFECT_FRAME_BLEED ||
+			effectId == EFFECT_RED_BARS || isHorrorSoundEffect(effectId))) {
+			if(effectId == EFFECT_TERRAIN_CORRUPTION || effectId == EFFECT_FOV_SPIKE) {
+				mc.sndManager.playHorrorSound("glitch.glitch14", 1.0F, 1.0F);
+			} else if(effectId == EFFECT_VRAM_LEAK) {
+				mc.sndManager.playHorrorSound("glitch.glitch16", 1.0F, 1.0F);
+			} else if(effectId == EFFECT_DEPTH_DECAY) {
+				mc.sndManager.playHorrorSound("glitch.glitch8", 1.0F, 1.0F);
+			} else if(effectId == EFFECT_TEXT_CORRUPTION) {
+				mc.sndManager.playHorrorSound("glitch.glitch19", 1.0F, 1.0F);
+			}
 			else mc.sndManager.playSoundFX(effectId == EFFECT_RED_BARS ? "glitch.glitch16" : "glitch.glitch1", 1.0F, 1.0F);
 		}
+	}
+
+	private static boolean isHorrorSoundEffect(int effectId) {
+		return effectId == EFFECT_TERRAIN_CORRUPTION || effectId == EFFECT_FOV_SPIKE ||
+			effectId == EFFECT_VRAM_LEAK || effectId == EFFECT_DEPTH_DECAY ||
+			effectId == EFFECT_TEXT_CORRUPTION;
 	}
 
 	public static void beginEffect(int effectId, int durationTicks) {
