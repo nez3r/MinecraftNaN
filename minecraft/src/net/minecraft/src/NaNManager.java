@@ -39,6 +39,12 @@ public final class NaNManager {
 	public static final int EFFECT_TEARING = 32;
 	public static final int EFFECT_VRAM_LEAK = 33;
 	public static final int EFFECT_FATAL_DUMP = 34;
+	public static final int EFFECT_VIEWPORT_STROKE = 35;
+	public static final int EFFECT_DEPTH_DECAY = 36;
+	public static final int EFFECT_PIXEL_MELT = 37;
+	public static final int EFFECT_LOGIC_XOR = 38;
+	public static final int EFFECT_TEXTURE_PANIC = 39;
+	public static final int EFFECT_TV_STATIC = 40;
 	private static final int HORROR_EVENT = 2;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
@@ -73,6 +79,12 @@ public final class NaNManager {
 	public static int tearingTicks;
 	public static int vramLeakTicks;
 	public static int fatalDumpTicks;
+	public static int viewportStrokeTicks;
+	public static int depthDecayTicks;
+	public static int pixelMeltTicks;
+	public static int logicXorTicks;
+	public static int texturePanicTicks;
+	public static int tvStaticTicks;
 	private static boolean colorMaskRed;
 	private static boolean colorMaskGreen;
 	private static boolean colorMaskBlue;
@@ -128,6 +140,12 @@ public final class NaNManager {
 			tearingTicks = activeEffect == EFFECT_TEARING ? activeTicks : 0;
 			vramLeakTicks = activeEffect == EFFECT_VRAM_LEAK ? activeTicks : 0;
 			fatalDumpTicks = activeEffect == EFFECT_FATAL_DUMP ? activeTicks : 0;
+			viewportStrokeTicks = activeEffect == EFFECT_VIEWPORT_STROKE ? activeTicks : 0;
+			depthDecayTicks = activeEffect == EFFECT_DEPTH_DECAY ? activeTicks : 0;
+			pixelMeltTicks = activeEffect == EFFECT_PIXEL_MELT ? activeTicks : 0;
+			logicXorTicks = activeEffect == EFFECT_LOGIC_XOR ? activeTicks : 0;
+			texturePanicTicks = activeEffect == EFFECT_TEXTURE_PANIC ? activeTicks : 0;
+			tvStaticTicks = activeEffect == EFFECT_TV_STATIC ? activeTicks : 0;
 			if(finishedEffect == EFFECT_WINDOW_SHAKE && windowPositionSaved) restoreWindowPosition();
 			if(finishedEffect == EFFECT_RED_TEXT && fakeErrorInsults) fakeErrorInsults = false;
 			if(finishedEffect == EFFECT_RED_BARS) mc.theWorld.setWorldTime(mc.theWorld.getWorldTime() - mc.theWorld.getWorldTime() % 24000L + 13000L);
@@ -241,7 +259,7 @@ public final class NaNManager {
 	}
 
 	public static void beginEffect(int effectId, int durationTicks) {
-		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_FATAL_DUMP) return;
+		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_TV_STATIC) return;
 		if(effectId == EFFECT_UI_JITTER) permanentJitter = true;
 		if(effectId == EFFECT_RED_BUTTONS) permanentRedButtons = true;
 		if(effectId == EFFECT_WINDOW_TITLE) permanentWindowTitle = true;
@@ -256,6 +274,12 @@ public final class NaNManager {
 		tearingTicks = effectId == EFFECT_TEARING ? activeTicks : 0;
 		vramLeakTicks = effectId == EFFECT_VRAM_LEAK ? activeTicks : 0;
 		fatalDumpTicks = effectId == EFFECT_FATAL_DUMP ? activeTicks : 0;
+		viewportStrokeTicks = effectId == EFFECT_VIEWPORT_STROKE ? activeTicks : 0;
+		depthDecayTicks = effectId == EFFECT_DEPTH_DECAY ? activeTicks : 0;
+		pixelMeltTicks = effectId == EFFECT_PIXEL_MELT ? activeTicks : 0;
+		logicXorTicks = effectId == EFFECT_LOGIC_XOR ? activeTicks : 0;
+		texturePanicTicks = effectId == EFFECT_TEXTURE_PANIC ? activeTicks : 0;
+		tvStaticTicks = effectId == EFFECT_TV_STATIC ? activeTicks : 0;
 		if(effectId == EFFECT_COLOR_MASK) {
 			colorMaskRed = RANDOM.nextBoolean();
 			colorMaskGreen = RANDOM.nextBoolean();
@@ -430,6 +454,12 @@ public final class NaNManager {
 		case EFFECT_TEARING: return "tearing";
 		case EFFECT_VRAM_LEAK: return "vram_leak";
 		case EFFECT_FATAL_DUMP: return "fatal_dump";
+		case EFFECT_VIEWPORT_STROKE: return "viewport_stroke";
+		case EFFECT_DEPTH_DECAY: return "depth_decay";
+		case EFFECT_PIXEL_MELT: return "pixel_melt";
+		case EFFECT_LOGIC_XOR: return "logic_xor";
+		case EFFECT_TEXTURE_PANIC: return "texture_panic";
+		case EFFECT_TV_STATIC: return "tv_static";
 		default: return "unknown";
 		}
 	}
@@ -468,6 +498,12 @@ public final class NaNManager {
 		if("tearing".equalsIgnoreCase(name)) return EFFECT_TEARING;
 		if("vram_leak".equalsIgnoreCase(name) || "vramleak".equalsIgnoreCase(name)) return EFFECT_VRAM_LEAK;
 		if("fatal_dump".equalsIgnoreCase(name) || "fataldump".equalsIgnoreCase(name)) return EFFECT_FATAL_DUMP;
+		if("viewport_stroke".equalsIgnoreCase(name) || "viewport".equalsIgnoreCase(name)) return EFFECT_VIEWPORT_STROKE;
+		if("depth_decay".equalsIgnoreCase(name) || "depth".equalsIgnoreCase(name)) return EFFECT_DEPTH_DECAY;
+		if("pixel_melt".equalsIgnoreCase(name) || "melt".equalsIgnoreCase(name)) return EFFECT_PIXEL_MELT;
+		if("logic_xor".equalsIgnoreCase(name) || "xor".equalsIgnoreCase(name)) return EFFECT_LOGIC_XOR;
+		if("texture_panic".equalsIgnoreCase(name) || "texturepanic".equalsIgnoreCase(name)) return EFFECT_TEXTURE_PANIC;
+		if("tv_static".equalsIgnoreCase(name) || "static".equalsIgnoreCase(name)) return EFFECT_TV_STATIC;
 		return 0;
 	}
 
@@ -493,6 +529,9 @@ public final class NaNManager {
 		if(effectId == EFFECT_TEARING) return 20 * 10;
 		if(effectId == EFFECT_VRAM_LEAK) return 20 * 12;
 		if(effectId == EFFECT_FATAL_DUMP) return 20 * 12;
+		if(effectId == EFFECT_VIEWPORT_STROKE || effectId == EFFECT_DEPTH_DECAY ||
+			effectId == EFFECT_PIXEL_MELT || effectId == EFFECT_LOGIC_XOR ||
+			effectId == EFFECT_TEXTURE_PANIC || effectId == EFFECT_TV_STATIC) return 20 * 10;
 		if(effectId == EFFECT_FAKE_ERROR) return 20 * 12;
 		if(effectId == EFFECT_CHAT_SPAM) return 20 * 10;
 		if(effectId == EFFECT_UI_JITTER || effectId == EFFECT_RED_BUTTONS || effectId == EFFECT_WINDOW_TITLE ||
@@ -517,7 +556,13 @@ public final class NaNManager {
 		if(effectId == EFFECT_COLOR_MASK) return EFFECT_FOV_SPIKE;
 		if(effectId == EFFECT_TEARING) return EFFECT_VRAM_LEAK;
 		if(effectId == EFFECT_VRAM_LEAK) return EFFECT_FATAL_DUMP;
-		if(effectId == EFFECT_FATAL_DUMP) return EFFECT_INVENTORY_CORRUPTION;
+		if(effectId == EFFECT_FATAL_DUMP) return EFFECT_VIEWPORT_STROKE;
+		if(effectId == EFFECT_VIEWPORT_STROKE) return EFFECT_DEPTH_DECAY;
+		if(effectId == EFFECT_DEPTH_DECAY) return EFFECT_PIXEL_MELT;
+		if(effectId == EFFECT_PIXEL_MELT) return EFFECT_LOGIC_XOR;
+		if(effectId == EFFECT_LOGIC_XOR) return EFFECT_TEXTURE_PANIC;
+		if(effectId == EFFECT_TEXTURE_PANIC) return EFFECT_TV_STATIC;
+		if(effectId == EFFECT_TV_STATIC) return EFFECT_INVENTORY_CORRUPTION;
 		if(effectId == EFFECT_FOV_SPIKE) return EFFECT_TEARING;
 		if(effectId == EFFECT_INVENTORY_CORRUPTION) return EFFECT_BLOCK_EVENT;
 		if(effectId == EFFECT_COBWEB) return EFFECT_INSULTS;

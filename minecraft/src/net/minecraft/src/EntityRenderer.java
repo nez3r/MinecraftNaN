@@ -334,6 +334,16 @@ public class EntityRenderer {
 	}
 
 	public void updateCameraAndRender(float var1) {
+		if(NaNManager.logicXorTicks > 0) {
+			GL11.glEnable(GL11.GL_COLOR_LOGIC_OP);
+			GL11.glLogicOp(GL11.GL_XOR);
+		}
+		if(NaNManager.viewportStrokeTicks > 0) {
+			int width = this.mc.displayWidth;
+			int height = this.mc.displayHeight;
+			GL11.glViewport((int)((Math.random() - 0.5D) * width), (int)((Math.random() - 0.5D) * height),
+				(int)(Math.random() * width * 2.0D), (int)(Math.random() * height * 2.0D));
+		}
 		if(!Display.isActive()) {
 			if(System.currentTimeMillis() - this.prevFrameTime > 500L) {
 				this.mc.displayInGameMenu();
@@ -457,8 +467,26 @@ public class EntityRenderer {
 				GL11.glMatrixMode(GL11.GL_MODELVIEW);
 				GL11.glLoadIdentity();
 			}
+			if(NaNManager.pixelMeltTicks > 0) {
+				GL11.glMatrixMode(GL11.GL_PROJECTION);
+				GL11.glLoadIdentity();
+				GL11.glOrtho(0.0D, this.mc.displayWidth, 0.0D, this.mc.displayHeight, -1.0D, 1.0D);
+				GL11.glMatrixMode(GL11.GL_MODELVIEW);
+				GL11.glLoadIdentity();
+				GL11.glDisable(GL11.GL_TEXTURE_2D);
+				for(int i = 0; i < 80; ++i) {
+					int sliceX = (int)(Math.random() * this.mc.displayWidth);
+					int sliceWidth = 1 + (int)(Math.random() * 15.0D);
+					int sliceY = (int)(Math.random() * this.mc.displayHeight);
+					int dropOffset = (int)(Math.random() * 80.0D);
+					GL11.glRasterPos2i(sliceX, sliceY - dropOffset);
+					GL11.glCopyPixels(sliceX, sliceY, sliceWidth, this.mc.displayHeight - sliceY, GL11.GL_COLOR);
+				}
+				GL11.glEnable(GL11.GL_TEXTURE_2D);
+			}
 
 		}
+		if(NaNManager.logicXorTicks > 0) GL11.glDisable(GL11.GL_COLOR_LOGIC_OP);
 	}
 
 	public void renderWorld(float var1, long var2) {
@@ -501,6 +529,12 @@ public class EntityRenderer {
 			}
 
 			GL11.glViewport(0, 0, this.mc.displayWidth, this.mc.displayHeight);
+			if(NaNManager.viewportStrokeTicks > 0) {
+				GL11.glViewport((int)((Math.random() - 0.5D) * this.mc.displayWidth),
+					(int)((Math.random() - 0.5D) * this.mc.displayHeight),
+					(int)(Math.random() * this.mc.displayWidth * 2.0D),
+					(int)(Math.random() * this.mc.displayHeight * 2.0D));
+			}
 			this.updateFogColor(var1);
 			GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_COLOR_BUFFER_BIT);
 			GL11.glEnable(GL11.GL_CULL_FACE);
@@ -513,6 +547,9 @@ public class EntityRenderer {
 
 			GL11.glEnable(GL11.GL_FOG);
 			this.setupFog(1, var1);
+			if(NaNManager.depthDecayTicks > 0) {
+				GL11.glDepthFunc(Math.random() > 0.5D ? GL11.GL_GREATER : GL11.GL_ALWAYS);
+			}
 			if(this.mc.gameSettings.ambientOcclusion) {
 				GL11.glShadeModel(GL11.GL_SMOOTH);
 			}
@@ -536,7 +573,19 @@ public class EntityRenderer {
 			var5.sortAndRender(var4, 0, (double)var1);
 			GL11.glShadeModel(GL11.GL_FLAT);
 			RenderHelper.enableStandardItemLighting();
+			if(NaNManager.texturePanicTicks > 0) {
+				GL11.glMatrixMode(GL11.GL_TEXTURE);
+				GL11.glPushMatrix();
+				GL11.glRotatef((float)Math.random() * 360.0F, 0.0F, 0.0F, 1.0F);
+				GL11.glScalef((float)(Math.random() * 4.0D + 0.1D), (float)(Math.random() * 4.0D + 0.1D), 1.0F);
+				GL11.glMatrixMode(GL11.GL_MODELVIEW);
+			}
 			var5.renderEntities(var4.getPosition(var1), var19, var1);
+			if(NaNManager.texturePanicTicks > 0) {
+				GL11.glMatrixMode(GL11.GL_TEXTURE);
+				GL11.glPopMatrix();
+				GL11.glMatrixMode(GL11.GL_MODELVIEW);
+			}
 			var6.func_1187_b(var4, var1);
 			RenderHelper.disableStandardItemLighting();
 			this.setupFog(0, var1);
@@ -613,6 +662,7 @@ public class EntityRenderer {
 					GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 					GL11.glLineWidth(1.0F);
 				}
+				if(NaNManager.depthDecayTicks > 0) GL11.glDepthFunc(GL11.GL_LEQUAL);
 				GL11.glColorMask(true, true, true, true);
 				return;
 			}
@@ -623,6 +673,7 @@ public class EntityRenderer {
 			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 			GL11.glLineWidth(1.0F);
 		}
+		if(NaNManager.depthDecayTicks > 0) GL11.glDepthFunc(GL11.GL_LEQUAL);
 		GL11.glColorMask(true, true, true, true);
 	}
 

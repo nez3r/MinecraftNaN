@@ -35,6 +35,12 @@ public final class NaNManager {
 	private static final int EFFECT_TEARING = 32;
 	private static final int EFFECT_VRAM_LEAK = 33;
 	private static final int EFFECT_FATAL_DUMP = 34;
+	private static final int EFFECT_VIEWPORT_STROKE = 35;
+	private static final int EFFECT_DEPTH_DECAY = 36;
+	private static final int EFFECT_PIXEL_MELT = 37;
+	private static final int EFFECT_LOGIC_XOR = 38;
+	private static final int EFFECT_TEXTURE_PANIC = 39;
+	private static final int EFFECT_TV_STATIC = 40;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
 	private final MinecraftServer server;
@@ -214,6 +220,12 @@ public final class NaNManager {
 		case EFFECT_TEARING: return "tearing";
 		case EFFECT_VRAM_LEAK: return "vram_leak";
 		case EFFECT_FATAL_DUMP: return "fatal_dump";
+		case EFFECT_VIEWPORT_STROKE: return "viewport_stroke";
+		case EFFECT_DEPTH_DECAY: return "depth_decay";
+		case EFFECT_PIXEL_MELT: return "pixel_melt";
+		case EFFECT_LOGIC_XOR: return "logic_xor";
+		case EFFECT_TEXTURE_PANIC: return "texture_panic";
+		case EFFECT_TV_STATIC: return "tv_static";
 		default: return "unknown";
 		}
 	}
@@ -252,6 +264,12 @@ public final class NaNManager {
 		if("tearing".equalsIgnoreCase(name)) return EFFECT_TEARING;
 		if("vram_leak".equalsIgnoreCase(name) || "vramleak".equalsIgnoreCase(name)) return EFFECT_VRAM_LEAK;
 		if("fatal_dump".equalsIgnoreCase(name) || "fataldump".equalsIgnoreCase(name)) return EFFECT_FATAL_DUMP;
+		if("viewport_stroke".equalsIgnoreCase(name) || "viewport".equalsIgnoreCase(name)) return EFFECT_VIEWPORT_STROKE;
+		if("depth_decay".equalsIgnoreCase(name) || "depth".equalsIgnoreCase(name)) return EFFECT_DEPTH_DECAY;
+		if("pixel_melt".equalsIgnoreCase(name) || "melt".equalsIgnoreCase(name)) return EFFECT_PIXEL_MELT;
+		if("logic_xor".equalsIgnoreCase(name) || "xor".equalsIgnoreCase(name)) return EFFECT_LOGIC_XOR;
+		if("texture_panic".equalsIgnoreCase(name) || "texturepanic".equalsIgnoreCase(name)) return EFFECT_TEXTURE_PANIC;
+		if("tv_static".equalsIgnoreCase(name) || "static".equalsIgnoreCase(name)) return EFFECT_TV_STATIC;
 		return 0;
 	}
 
@@ -278,6 +296,9 @@ public final class NaNManager {
 		if(effect == EFFECT_TEARING) return 20 * 10;
 		if(effect == EFFECT_VRAM_LEAK) return 20 * 12;
 		if(effect == EFFECT_FATAL_DUMP) return 20 * 12;
+		if(effect == EFFECT_VIEWPORT_STROKE || effect == EFFECT_DEPTH_DECAY ||
+			effect == EFFECT_PIXEL_MELT || effect == EFFECT_LOGIC_XOR ||
+			effect == EFFECT_TEXTURE_PANIC || effect == EFFECT_TV_STATIC) return 20 * 10;
 		if(effect == EFFECT_FAKE_ERROR) return 20 * 12;
 		if(effect == EFFECT_CHAT_SPAM) return 20 * 10;
 		if(effect == EFFECT_UI_JITTER || effect == EFFECT_RED_BUTTONS || effect == EFFECT_WINDOW_TITLE ||
@@ -302,7 +323,13 @@ public final class NaNManager {
 		if(effect == EFFECT_COLOR_MASK) return EFFECT_FOV_SPIKE;
 		if(effect == EFFECT_TEARING) return EFFECT_VRAM_LEAK;
 		if(effect == EFFECT_VRAM_LEAK) return EFFECT_FATAL_DUMP;
-		if(effect == EFFECT_FATAL_DUMP) return EFFECT_INVENTORY_CORRUPTION;
+		if(effect == EFFECT_FATAL_DUMP) return EFFECT_VIEWPORT_STROKE;
+		if(effect == EFFECT_VIEWPORT_STROKE) return EFFECT_DEPTH_DECAY;
+		if(effect == EFFECT_DEPTH_DECAY) return EFFECT_PIXEL_MELT;
+		if(effect == EFFECT_PIXEL_MELT) return EFFECT_LOGIC_XOR;
+		if(effect == EFFECT_LOGIC_XOR) return EFFECT_TEXTURE_PANIC;
+		if(effect == EFFECT_TEXTURE_PANIC) return EFFECT_TV_STATIC;
+		if(effect == EFFECT_TV_STATIC) return EFFECT_INVENTORY_CORRUPTION;
 		if(effect == EFFECT_FOV_SPIKE) return EFFECT_TEARING;
 		if(effect == EFFECT_INVENTORY_CORRUPTION) return nextConstrainedEffect();
 		if(effect == EFFECT_BLOCK_EVENT || effect == EFFECT_COBWEB || effect == EFFECT_INSULTS) {

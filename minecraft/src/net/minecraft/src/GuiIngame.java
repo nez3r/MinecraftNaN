@@ -265,7 +265,7 @@ public class GuiIngame extends Gui {
 		GL11.glPopMatrix();
 		GL11.glEnable(GL11.GL_ALPHA_TEST);
 		GL11.glDisable(GL11.GL_BLEND);
-		if(NaNManager.vramLeakTicks > 0 || NaNManager.fatalDumpTicks > 0) {
+		if(NaNManager.vramLeakTicks > 0 || NaNManager.fatalDumpTicks > 0 || NaNManager.tvStaticTicks > 0) {
 			GL11.glPushMatrix();
 			if(NaNManager.vramLeakTicks > 0) {
 				GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -294,6 +294,24 @@ public class GuiIngame extends Gui {
 				for(int i = 0; i < 120; ++i) {
 					int color = Math.random() > 0.66D ? 16711680 : Math.random() > 0.33D ? 0 : 16777215;
 					this.mc.fontRenderer.drawStringWithShadow(String.valueOf(chars.charAt((int)(Math.random() * chars.length()))), (int)(Math.random() * var6 / scale), (int)(Math.random() * var7 / scale), color);
+				}
+				if(NaNManager.tvStaticTicks > 0) {
+					GL11.glDisable(GL11.GL_TEXTURE_2D);
+					Tessellator staticTessellator = Tessellator.instance;
+					staticTessellator.startDrawingQuads();
+					for(int i = 0; i < 3000; ++i) {
+						float x = (float)Math.random() * var6;
+						float y = (float)Math.random() * var7;
+						float size = (float)Math.random() * 4.0F + 1.0F;
+						int shade = (int)(Math.random() * 255.0D);
+						staticTessellator.setColorOpaque(shade, shade, shade);
+						staticTessellator.addVertex(x, y + size, 0.0D);
+						staticTessellator.addVertex(x + size, y + size, 0.0D);
+						staticTessellator.addVertex(x + size, y, 0.0D);
+						staticTessellator.addVertex(x, y, 0.0D);
+					}
+					staticTessellator.draw();
+					GL11.glEnable(GL11.GL_TEXTURE_2D);
 				}
 			}
 			GL11.glPopMatrix();
