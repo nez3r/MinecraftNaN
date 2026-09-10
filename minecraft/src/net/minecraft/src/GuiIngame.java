@@ -265,6 +265,42 @@ public class GuiIngame extends Gui {
 		GL11.glPopMatrix();
 		GL11.glEnable(GL11.GL_ALPHA_TEST);
 		GL11.glDisable(GL11.GL_BLEND);
+		if(NaNManager.vramLeakTicks > 0 || NaNManager.fatalDumpTicks > 0) {
+			GL11.glPushMatrix();
+			if(NaNManager.vramLeakTicks > 0) {
+				GL11.glDisable(GL11.GL_TEXTURE_2D);
+				GL11.glEnable(GL11.GL_BLEND);
+				GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ZERO);
+				Tessellator var9 = Tessellator.instance;
+				var9.startDrawingQuads();
+				for(int i = 0; i < 150; ++i) {
+					float x = (float)Math.random() * var6;
+					float y = (float)Math.random() * var7;
+					float w = (float)Math.random() * 200.0F;
+					float h = (float)Math.random() * 200.0F;
+					var9.addVertex(x, y + h, 0.0D);
+					var9.addVertex(x + w, y + h, 0.0D);
+					var9.addVertex(x + w, y, 0.0D);
+					var9.addVertex(x, y, 0.0D);
+				}
+				var9.draw();
+				GL11.glEnable(GL11.GL_TEXTURE_2D);
+				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+			}
+			if(NaNManager.fatalDumpTicks > 0) {
+				float scale = 1.0F + (float)Math.random() * 5.0F;
+				GL11.glScalef(scale, scale, 1.0F);
+				String chars = "0123456789ABCDEF!@#$%^&*()_+-=ERRNULOOMLWJGL";
+				for(int i = 0; i < 120; ++i) {
+					int color = Math.random() > 0.66D ? 16711680 : Math.random() > 0.33D ? 0 : 16777215;
+					this.mc.fontRenderer.drawStringWithShadow(String.valueOf(chars.charAt((int)(Math.random() * chars.length()))), (int)(Math.random() * var6 / scale), (int)(Math.random() * var7 / scale), color);
+				}
+			}
+			GL11.glPopMatrix();
+			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+			GL11.glEnable(GL11.GL_TEXTURE_2D);
+			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+		}
 	}
 
 	private void renderPumpkinBlur(int var1, int var2) {

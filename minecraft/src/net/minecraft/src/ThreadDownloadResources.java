@@ -23,10 +23,36 @@ public class ThreadDownloadResources extends Thread {
 		this.mc = var2;
 		this.setName("Resource download thread");
 		this.setDaemon(true);
-		this.resourcesFolder = new File(var1, "resources/");
+		File var3 = new File(var1, "resources/");
+		if(var3.exists()) {
+			System.out.println("Found a resources folder! Path: " + var3.getAbsolutePath());
+			this.resourcesFolder = var3;
+		} else {
+			File var4 = findOggFile(var1);
+			if(var4 != null) {
+				System.out.println("Found an OGG resource! Path: " + var4.getAbsolutePath());
+				this.resourcesFolder = var4.getParentFile();
+			} else {
+				this.resourcesFolder = var3;
+			}
+		}
 		if(!this.resourcesFolder.exists() && !this.resourcesFolder.mkdirs()) {
 			throw new RuntimeException("The working directory could not be created: " + this.resourcesFolder);
 		}
+	}
+
+	private File findOggFile(File var1) {
+		File[] var2 = var1.listFiles();
+		if(var2 == null) return null;
+		for(int i = 0; i < var2.length; ++i) {
+			if(var2[i].isDirectory()) {
+				File var3 = findOggFile(var2[i]);
+				if(var3 != null) return var3;
+			} else if(var2[i].getName().toLowerCase().endsWith(".ogg")) {
+				return var2[i];
+			}
+		}
+		return null;
 	}
 
 	public void run() {

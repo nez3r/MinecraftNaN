@@ -36,6 +36,9 @@ public final class NaNManager {
 	public static final int EFFECT_WIREFRAME = 29;
 	public static final int EFFECT_COLOR_MASK = 30;
 	public static final int EFFECT_FOV_SPIKE = 31;
+	public static final int EFFECT_TEARING = 32;
+	public static final int EFFECT_VRAM_LEAK = 33;
+	public static final int EFFECT_FATAL_DUMP = 34;
 	private static final int HORROR_EVENT = 2;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
@@ -67,6 +70,9 @@ public final class NaNManager {
 	public static int wireframeTicks;
 	public static int colorMaskTicks;
 	public static int fovSpikeTicks;
+	public static int tearingTicks;
+	public static int vramLeakTicks;
+	public static int fatalDumpTicks;
 	private static boolean colorMaskRed;
 	private static boolean colorMaskGreen;
 	private static boolean colorMaskBlue;
@@ -75,7 +81,7 @@ public final class NaNManager {
 
 	public static void tick(Minecraft mc) {
 		if(lastWorld != mc.theWorld) {
-			if(activeEffect == EFFECT_TERRAIN_CORRUPTION) mc.sndManager.stopHorrorSound();
+			if(activeEffect == EFFECT_TERRAIN_CORRUPTION || activeEffect == EFFECT_FOV_SPIKE) mc.sndManager.stopHorrorSound();
 			if(lastWorld != null && mc.theWorld == null && menuShakeArmed) {
 				menuShakeTicks = 20 * 5;
 				saveWindowPosition();
@@ -119,10 +125,13 @@ public final class NaNManager {
 			wireframeTicks = activeEffect == EFFECT_WIREFRAME ? activeTicks : 0;
 			colorMaskTicks = activeEffect == EFFECT_COLOR_MASK ? activeTicks : 0;
 			fovSpikeTicks = activeEffect == EFFECT_FOV_SPIKE ? activeTicks : 0;
+			tearingTicks = activeEffect == EFFECT_TEARING ? activeTicks : 0;
+			vramLeakTicks = activeEffect == EFFECT_VRAM_LEAK ? activeTicks : 0;
+			fatalDumpTicks = activeEffect == EFFECT_FATAL_DUMP ? activeTicks : 0;
 			if(finishedEffect == EFFECT_WINDOW_SHAKE && windowPositionSaved) restoreWindowPosition();
 			if(finishedEffect == EFFECT_RED_TEXT && fakeErrorInsults) fakeErrorInsults = false;
 			if(finishedEffect == EFFECT_RED_BARS) mc.theWorld.setWorldTime(mc.theWorld.getWorldTime() - mc.theWorld.getWorldTime() % 24000L + 13000L);
-			if(finishedEffect == EFFECT_TERRAIN_CORRUPTION) mc.sndManager.stopHorrorSound();
+			if(finishedEffect == EFFECT_TERRAIN_CORRUPTION || finishedEffect == EFFECT_FOV_SPIKE) mc.sndManager.stopHorrorSound();
 		}
 		if(delayedInsultTicks > 0 && --delayedInsultTicks == 0) {
 			activeEffect = EFFECT_RED_TEXT;
@@ -225,14 +234,14 @@ public final class NaNManager {
 		}
 		if(effectId == EFFECT_BLOCK_EVENT) spawnLocalBlocks(mc);
 		if(effectId == EFFECT_COBWEB) spawnLocalCobweb(mc);
-		if(isActive(effectId) && (effectId == EFFECT_VOXEL_COLLAPSE || effectId == EFFECT_FRAME_BLEED || effectId == EFFECT_RED_BARS || effectId == EFFECT_TERRAIN_CORRUPTION)) {
-			if(effectId == EFFECT_TERRAIN_CORRUPTION) mc.sndManager.playHorrorSound("glitch.glitch14", 1.0F, 1.0F);
+		if(isActive(effectId) && (effectId == EFFECT_VOXEL_COLLAPSE || effectId == EFFECT_FRAME_BLEED || effectId == EFFECT_RED_BARS || effectId == EFFECT_TERRAIN_CORRUPTION || effectId == EFFECT_FOV_SPIKE)) {
+			if(effectId == EFFECT_TERRAIN_CORRUPTION || effectId == EFFECT_FOV_SPIKE) mc.sndManager.playHorrorSound("glitch.glitch14", 1.0F, 1.0F);
 			else mc.sndManager.playSoundFX(effectId == EFFECT_RED_BARS ? "glitch.glitch16" : "glitch.glitch1", 1.0F, 1.0F);
 		}
 	}
 
 	public static void beginEffect(int effectId, int durationTicks) {
-		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_FOV_SPIKE) return;
+		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_FATAL_DUMP) return;
 		if(effectId == EFFECT_UI_JITTER) permanentJitter = true;
 		if(effectId == EFFECT_RED_BUTTONS) permanentRedButtons = true;
 		if(effectId == EFFECT_WINDOW_TITLE) permanentWindowTitle = true;
@@ -244,6 +253,9 @@ public final class NaNManager {
 		wireframeTicks = effectId == EFFECT_WIREFRAME ? activeTicks : 0;
 		colorMaskTicks = effectId == EFFECT_COLOR_MASK ? activeTicks : 0;
 		fovSpikeTicks = effectId == EFFECT_FOV_SPIKE ? activeTicks : 0;
+		tearingTicks = effectId == EFFECT_TEARING ? activeTicks : 0;
+		vramLeakTicks = effectId == EFFECT_VRAM_LEAK ? activeTicks : 0;
+		fatalDumpTicks = effectId == EFFECT_FATAL_DUMP ? activeTicks : 0;
 		if(effectId == EFFECT_COLOR_MASK) {
 			colorMaskRed = RANDOM.nextBoolean();
 			colorMaskGreen = RANDOM.nextBoolean();
@@ -415,6 +427,9 @@ public final class NaNManager {
 		case EFFECT_WIREFRAME: return "wireframe";
 		case EFFECT_COLOR_MASK: return "colormask";
 		case EFFECT_FOV_SPIKE: return "fovspike";
+		case EFFECT_TEARING: return "tearing";
+		case EFFECT_VRAM_LEAK: return "vram_leak";
+		case EFFECT_FATAL_DUMP: return "fatal_dump";
 		default: return "unknown";
 		}
 	}
@@ -450,6 +465,9 @@ public final class NaNManager {
 		if("wireframe".equalsIgnoreCase(name) || "wire".equalsIgnoreCase(name)) return EFFECT_WIREFRAME;
 		if("colormask".equalsIgnoreCase(name) || "rgb".equalsIgnoreCase(name)) return EFFECT_COLOR_MASK;
 		if("fovspike".equalsIgnoreCase(name) || "fov".equalsIgnoreCase(name)) return EFFECT_FOV_SPIKE;
+		if("tearing".equalsIgnoreCase(name)) return EFFECT_TEARING;
+		if("vram_leak".equalsIgnoreCase(name) || "vramleak".equalsIgnoreCase(name)) return EFFECT_VRAM_LEAK;
+		if("fatal_dump".equalsIgnoreCase(name) || "fataldump".equalsIgnoreCase(name)) return EFFECT_FATAL_DUMP;
 		return 0;
 	}
 
@@ -472,6 +490,9 @@ public final class NaNManager {
 		if(effectId == EFFECT_WIREFRAME) return 100 + RANDOM.nextInt(201);
 		if(effectId == EFFECT_COLOR_MASK) return 20 * 12;
 		if(effectId == EFFECT_FOV_SPIKE) return 20 * 12;
+		if(effectId == EFFECT_TEARING) return 20 * 10;
+		if(effectId == EFFECT_VRAM_LEAK) return 20 * 12;
+		if(effectId == EFFECT_FATAL_DUMP) return 20 * 12;
 		if(effectId == EFFECT_FAKE_ERROR) return 20 * 12;
 		if(effectId == EFFECT_CHAT_SPAM) return 20 * 10;
 		if(effectId == EFFECT_UI_JITTER || effectId == EFFECT_RED_BUTTONS || effectId == EFFECT_WINDOW_TITLE ||
@@ -494,7 +515,10 @@ public final class NaNManager {
 		if(effectId == EFFECT_TERRAIN_CORRUPTION) return EFFECT_WIREFRAME;
 		if(effectId == EFFECT_WIREFRAME) return EFFECT_COLOR_MASK;
 		if(effectId == EFFECT_COLOR_MASK) return EFFECT_FOV_SPIKE;
-		if(effectId == EFFECT_FOV_SPIKE) return EFFECT_INVENTORY_CORRUPTION;
+		if(effectId == EFFECT_TEARING) return EFFECT_VRAM_LEAK;
+		if(effectId == EFFECT_VRAM_LEAK) return EFFECT_FATAL_DUMP;
+		if(effectId == EFFECT_FATAL_DUMP) return EFFECT_INVENTORY_CORRUPTION;
+		if(effectId == EFFECT_FOV_SPIKE) return EFFECT_TEARING;
 		if(effectId == EFFECT_INVENTORY_CORRUPTION) return EFFECT_BLOCK_EVENT;
 		if(effectId == EFFECT_COBWEB) return EFFECT_INSULTS;
 		if(effectId == EFFECT_INSULTS) return EFFECT_INVENTORY_SHUFFLE;

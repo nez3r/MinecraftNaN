@@ -437,6 +437,26 @@ public class EntityRenderer {
 					this.mc.currentScreen.field_25091_h.func_25087_a(var1);
 				}
 			}
+			if(NaNManager.tearingTicks > 0) {
+				GL11.glMatrixMode(GL11.GL_PROJECTION);
+				GL11.glLoadIdentity();
+				GL11.glOrtho(0.0D, this.mc.displayWidth, 0.0D, this.mc.displayHeight, -1.0D, 1.0D);
+				GL11.glMatrixMode(GL11.GL_MODELVIEW);
+				GL11.glLoadIdentity();
+				GL11.glDisable(GL11.GL_TEXTURE_2D);
+				for(int i = 0; i < 50; ++i) {
+					int sliceY = (int)(Math.random() * this.mc.displayHeight);
+					int sliceHeight = 1 + (int)(Math.random() * 35.0D);
+					int offsetX = (int)((Math.random() - 0.5D) * this.mc.displayWidth);
+					GL11.glRasterPos2i(offsetX, sliceY);
+					GL11.glCopyPixels(0, sliceY, this.mc.displayWidth, sliceHeight, GL11.GL_COLOR);
+				}
+				GL11.glEnable(GL11.GL_TEXTURE_2D);
+				GL11.glMatrixMode(GL11.GL_PROJECTION);
+				GL11.glLoadIdentity();
+				GL11.glMatrixMode(GL11.GL_MODELVIEW);
+				GL11.glLoadIdentity();
+			}
 
 		}
 	}
