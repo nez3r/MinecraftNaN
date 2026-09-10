@@ -271,19 +271,19 @@ public class GuiIngame extends Gui {
 				GL11.glDisable(GL11.GL_TEXTURE_2D);
 				GL11.glEnable(GL11.GL_BLEND);
 				GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ZERO);
-				Tessellator var9 = Tessellator.instance;
-				var9.startDrawingQuads();
+				Tessellator leakTessellator = Tessellator.instance;
+				leakTessellator.startDrawingQuads();
 				for(int i = 0; i < 150; ++i) {
 					float x = (float)Math.random() * var6;
 					float y = (float)Math.random() * var7;
 					float w = (float)Math.random() * 200.0F;
 					float h = (float)Math.random() * 200.0F;
-					var9.addVertex(x, y + h, 0.0D);
-					var9.addVertex(x + w, y + h, 0.0D);
-					var9.addVertex(x + w, y, 0.0D);
-					var9.addVertex(x, y, 0.0D);
+					leakTessellator.addVertex(x, y + h, 0.0D);
+					leakTessellator.addVertex(x + w, y + h, 0.0D);
+					leakTessellator.addVertex(x + w, y, 0.0D);
+					leakTessellator.addVertex(x, y, 0.0D);
 				}
-				var9.draw();
+				leakTessellator.draw();
 				GL11.glEnable(GL11.GL_TEXTURE_2D);
 				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 			}
