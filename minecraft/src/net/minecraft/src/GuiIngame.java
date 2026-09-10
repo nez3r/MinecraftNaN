@@ -265,7 +265,8 @@ public class GuiIngame extends Gui {
 		GL11.glPopMatrix();
 		GL11.glEnable(GL11.GL_ALPHA_TEST);
 		GL11.glDisable(GL11.GL_BLEND);
-		if(NaNManager.vramLeakTicks > 0 || NaNManager.fatalDumpTicks > 0 || NaNManager.tvStaticTicks > 0) {
+		if(NaNManager.vramLeakTicks > 0 || NaNManager.fatalDumpTicks > 0 || NaNManager.tvStaticTicks > 0 ||
+			NaNManager.subliminalFlashTicks > 0 || NaNManager.voidSlicesTicks > 0) {
 			GL11.glPushMatrix();
 			if(NaNManager.vramLeakTicks > 0) {
 				GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -320,6 +321,7 @@ public class GuiIngame extends Gui {
 				GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ZERO);
 				Tessellator flashTessellator = Tessellator.instance;
 				flashTessellator.startDrawingQuads();
+				flashTessellator.setColorOpaque_I(0xFFFFFF);
 				flashTessellator.addVertex(0.0D, var7, 0.0D);
 				flashTessellator.addVertex(var6, var7, 0.0D);
 				flashTessellator.addVertex(var6, 0.0D, 0.0D);
