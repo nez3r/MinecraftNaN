@@ -178,8 +178,13 @@ public final class NaNManager {
 		int duration = effectDuration(effect);
 		if(effect == EFFECT_RANDOM_LOOT) giveItemToPlayers(itemId, itemCount, null);
 		applyPlayerEvent(effect, null);
+		if(this.ticksUntilEvent.length != this.server.worldMngr.length) {
+			this.ticksUntilEvent = new int[this.server.worldMngr.length];
+			for(int i = 0; i < this.ticksUntilEvent.length; ++i) this.ticksUntilEvent[i] = nextInterval();
+		}
 		if(this.activeEffectTicks.length != this.server.worldMngr.length) this.activeEffectTicks = new int[this.server.worldMngr.length];
 		for(int i = 0; i < this.activeEffectTicks.length; ++i) this.activeEffectTicks[i] = duration;
+		for(int i = 0; i < this.ticksUntilEvent.length; ++i) this.ticksUntilEvent[i] = nextInterval();
 		if(effect == EFFECT_RED_BARS) {
 			if(this.redBarsTicks.length != this.server.worldMngr.length) this.redBarsTicks = new int[this.server.worldMngr.length];
 			for(int i = 0; i < this.redBarsTicks.length; ++i) this.redBarsTicks[i] = effectDuration(effect);
@@ -433,8 +438,8 @@ public final class NaNManager {
 				index = 0;
 				for(int slot = 0; slot < player.inventory.mainInventory.length; ++slot) player.inventory.mainInventory[slot] = allItems[index++];
 				for(int slot = 0; slot < player.inventory.armorInventory.length; ++slot) player.inventory.armorInventory[slot] = allItems[index++];
-				for(int slot = 0; slot < player.inventory.mainInventory.length; ++slot) {
-					player.playerNetServerHandler.sendPacket(new Packet5PlayerInventory(player.entityId, slot, player.inventory.mainInventory[slot]));
+				for(int slot = 0; slot < 5; ++slot) {
+					player.playerNetServerHandler.sendPacket(new Packet5PlayerInventory(player.entityId, slot, player.getEquipmentInSlot(slot)));
 				}
 			} else if(effect == EFFECT_DROP_ACTIVE) {
 				ItemStack active = player.inventory.decrStackSize(player.inventory.currentItem, player.inventory.getCurrentItem() == null ? 0 : player.inventory.getCurrentItem().stackSize);

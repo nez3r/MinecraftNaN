@@ -108,6 +108,9 @@ public final class NaNManager {
 				menuShakeTicks = 20 * 5;
 				saveWindowPosition();
 			}
+			if(lastWorld != null && mc.theWorld == null) {
+				resetWorldEffects(mc);
+			}
 			lastWorld = mc.theWorld;
 			if(mc.theWorld != null) {
 				ticksUntilEvent = nextInterval();
@@ -133,7 +136,10 @@ public final class NaNManager {
 				if(!windowPositionSaved) saveWindowPosition();
 				Display.setLocation(previousWindowX + RANDOM.nextInt(41) - 20, previousWindowY + RANDOM.nextInt(41) - 20);
 			}
-			if(menuShakeTicks == 0 && windowPositionSaved) restoreWindowPosition();
+			if(menuShakeTicks == 0 && windowPositionSaved) {
+				restoreWindowPosition();
+				menuShakeArmed = false;
+			}
 		}
 		if(mc.theWorld == null || mc.thePlayer == null) return;
 
@@ -197,6 +203,22 @@ public final class NaNManager {
 	private static void restoreWindowPosition() {
 		Display.setLocation(previousWindowX, previousWindowY);
 		windowPositionSaved = false;
+	}
+
+	private static void resetWorldEffects(Minecraft mc) {
+		permanentJitter = false;
+		permanentRedButtons = false;
+		permanentWindowTitle = false;
+		permanentDebugCorruption = false;
+		permanentInventoryCorruption = false;
+		titleTicks = 0;
+		redButtonTicks = 0;
+		debugCorruptionTicks = 0;
+		if(previousRenderDistance >= 0) {
+			mc.gameSettings.renderDistance = previousRenderDistance;
+			previousRenderDistance = -1;
+		}
+		Display.setTitle(originalWindowTitle);
 	}
 
 	private static int nextInterval() {
