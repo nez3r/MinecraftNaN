@@ -425,7 +425,7 @@ public class NetServerHandler extends NetHandler implements ICommandListener {
 			}
 		} else {
 			String var3;
-			boolean debugCommand = var1.toLowerCase().startsWith("/mst") || var1.toLowerCase().startsWith("/event ") || var1.toLowerCase().startsWith("/next") || var1.toLowerCase().matches("/x[0-9]+");
+			boolean debugCommand = var1.toLowerCase().startsWith("/mst") || var1.toLowerCase().startsWith("/event ") || var1.toLowerCase().startsWith("/next") || var1.toLowerCase().matches("/x([0-9]+|\\s+[0-9]+)");
 			if(debugCommand || this.mcServer.configManager.isOp(this.playerEntity.username)) {
 				var3 = var1.substring(1);
 				logger.info(this.playerEntity.username + " issued server command: " + var3);

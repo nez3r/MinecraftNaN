@@ -43,18 +43,21 @@ public class ChunkLoader implements IChunkLoader {
 
 	public Chunk loadChunk(World var1, int var2, int var3) throws IOException {
 		File var4 = this.chunkFileForXZ(var2, var3);
-		if(var4 != null && var4.exists()) {
+		File[] var9 = var4 == null ? new File[0] : new File[]{var4, new File(var4.getPath() + ".tmp"), new File(var4.getPath() + ".bak")};
+		for(int var10 = 0; var10 < var9.length; ++var10) {
+			if(!var9[var10].exists()) continue;
 			try {
-				FileInputStream var5 = new FileInputStream(var4);
+				FileInputStream var5 = new FileInputStream(var9[var10]);
 				NBTTagCompound var6 = CompressedStreamTools.func_770_a(var5);
+				var5.close();
 				if(!var6.hasKey("Level")) {
 					System.out.println("Chunk file at " + var2 + "," + var3 + " is missing level data, skipping");
-					return null;
+					continue;
 				}
 
 				if(!var6.getCompoundTag("Level").hasKey("Blocks")) {
 					System.out.println("Chunk file at " + var2 + "," + var3 + " is missing block data, skipping");
-					return null;
+					continue;
 				}
 
 				Chunk var7 = loadChunkIntoWorldFromCompound(var1, var6.getCompoundTag("Level"));
@@ -66,9 +69,14 @@ public class ChunkLoader implements IChunkLoader {
 				}
 
 				var7.func_25083_h();
+				if(var10 != 0) {
+					System.out.println("Recovered chunk " + var2 + "," + var3 + " from " + var9[var10].getName());
+					if(var4.exists()) var4.delete();
+					var9[var10].renameTo(var4);
+				}
 				return var7;
 			} catch (Exception var8) {
-				var8.printStackTrace();
+				System.err.println("Failed to load chunk " + var2 + "," + var3 + " from " + var9[var10].getName() + ", trying recovery copy.");
 			}
 		}
 
@@ -84,7 +92,8 @@ public class ChunkLoader implements IChunkLoader {
 		}
 
 		try {
-			File var10 = new File(this.saveDir, "tmp_chunk.dat");
+			File var10 = new File(var3.getPath() + ".tmp");
+			File var11 = new File(var3.getPath() + ".bak");
 			FileOutputStream var5 = new FileOutputStream(var10);
 			NBTTagCompound var6 = new NBTTagCompound();
 			NBTTagCompound var7 = new NBTTagCompound();
@@ -93,10 +102,15 @@ public class ChunkLoader implements IChunkLoader {
 			CompressedStreamTools.writeGzippedCompoundToOutputStream(var6, var5);
 			var5.close();
 			if(var3.exists()) {
-				var3.delete();
+				if(var11.exists()) var11.delete();
+				if(!var3.renameTo(var11)) throw new IOException("Could not create chunk backup " + var11);
 			}
 
-			var10.renameTo(var3);
+			if(!var10.renameTo(var3)) {
+				if(var11.exists()) var11.renameTo(var3);
+				throw new IOException("Could not replace chunk " + var3);
+			}
+			if(var11.exists()) var11.delete();
 			WorldInfo var8 = var1.getWorldInfo();
 			var8.setSizeOnDisk(var8.getSizeOnDisk() + var3.length());
 		} catch (Exception var9) {

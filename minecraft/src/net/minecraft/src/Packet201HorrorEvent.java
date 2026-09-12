@@ -63,6 +63,7 @@ public class Packet201HorrorEvent extends Packet {
 	}
 
 	public int getPacketSize() {
-		return 24 + (this.message == null ? 0 : this.message.length() + 2);
+		String text = this.message == null ? "" : this.message;
+		return 26 + text.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
 	}
 }

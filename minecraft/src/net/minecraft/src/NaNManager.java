@@ -7,6 +7,9 @@ import org.lwjgl.opengl.Display;
 
 /** Client-side, deliberately harmless approximations of the NaN events. */
 public final class NaNManager {
+	private static final int MAZE_ORIGIN_X = 1000;
+	private static final int MAZE_ORIGIN_Y = 80;
+	private static final int MAZE_ORIGIN_Z = 500;
 	public static final int EFFECT_VOXEL_COLLAPSE = 2;
 	public static final int EFFECT_FRAME_BLEED = 3;
 	public static final int EFFECT_RED_TEXT = 4;
@@ -50,6 +53,7 @@ public final class NaNManager {
 	public static final int EFFECT_VOID_SLICES = 43;
 	public static final int EFFECT_WIREFRAME_BLOOD = 44;
 	public static final int EFFECT_VERTIGO_CRUSH = 45;
+	public static final int EFFECT_BEDROCK_MAZE = 46;
 	private static final int HORROR_EVENT = 2;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
@@ -108,6 +112,7 @@ public final class NaNManager {
 				menuShakeTicks = 20 * 5;
 				saveWindowPosition();
 			}
+
 			if(lastWorld != null && mc.theWorld == null) {
 				resetWorldEffects(mc);
 			}
@@ -150,23 +155,23 @@ public final class NaNManager {
 				mc.gameSettings.renderDistance = previousRenderDistance;
 				previousRenderDistance = -1;
 			}
-			wireframeTicks = activeEffect == EFFECT_WIREFRAME ? activeTicks : 0;
-			colorMaskTicks = activeEffect == EFFECT_COLOR_MASK ? activeTicks : 0;
-			fovSpikeTicks = activeEffect == EFFECT_FOV_SPIKE ? activeTicks : 0;
-			tearingTicks = activeEffect == EFFECT_TEARING ? activeTicks : 0;
-			vramLeakTicks = activeEffect == EFFECT_VRAM_LEAK ? activeTicks : 0;
-			fatalDumpTicks = activeEffect == EFFECT_FATAL_DUMP ? activeTicks : 0;
-			viewportStrokeTicks = activeEffect == EFFECT_VIEWPORT_STROKE ? activeTicks : 0;
-			depthDecayTicks = activeEffect == EFFECT_DEPTH_DECAY ? activeTicks : 0;
-			pixelMeltTicks = activeEffect == EFFECT_PIXEL_MELT ? activeTicks : 0;
-			logicXorTicks = activeEffect == EFFECT_LOGIC_XOR ? activeTicks : 0;
-			texturePanicTicks = activeEffect == EFFECT_TEXTURE_PANIC ? activeTicks : 0;
-			tvStaticTicks = activeEffect == EFFECT_TV_STATIC ? activeTicks : 0;
-			echoSmearTicks = activeEffect == EFFECT_ECHO_SMEAR ? activeTicks : 0;
-			subliminalFlashTicks = activeEffect == EFFECT_SUBLIMINAL_FLASH ? activeTicks : 0;
-			voidSlicesTicks = activeEffect == EFFECT_VOID_SLICES ? activeTicks : 0;
-			wireframeBloodTicks = activeEffect == EFFECT_WIREFRAME_BLOOD ? activeTicks : 0;
-			vertigoCrushTicks = activeEffect == EFFECT_VERTIGO_CRUSH ? activeTicks : 0;
+			wireframeTicks = 0;
+			colorMaskTicks = 0;
+			fovSpikeTicks = 0;
+			tearingTicks = 0;
+			vramLeakTicks = 0;
+			fatalDumpTicks = 0;
+			viewportStrokeTicks = 0;
+			depthDecayTicks = 0;
+			pixelMeltTicks = 0;
+			logicXorTicks = 0;
+			texturePanicTicks = 0;
+			tvStaticTicks = 0;
+			echoSmearTicks = 0;
+			subliminalFlashTicks = 0;
+			voidSlicesTicks = 0;
+			wireframeBloodTicks = 0;
+			vertigoCrushTicks = 0;
 			if(finishedEffect == EFFECT_WINDOW_SHAKE && windowPositionSaved) restoreWindowPosition();
 			if(finishedEffect == EFFECT_RED_TEXT && fakeErrorInsults) fakeErrorInsults = false;
 			if(finishedEffect == EFFECT_RED_BARS) mc.theWorld.setWorldTime(mc.theWorld.getWorldTime() - mc.theWorld.getWorldTime() % 24000L + 13000L);
@@ -178,6 +183,7 @@ public final class NaNManager {
 			fakeErrorInsults = true;
 		}
 		if(activeEffect == EFFECT_INSULTS && activeTicks % 10 == 0) showLocalInsult(mc);
+		if(activeEffect == EFFECT_INVENTORY_SHUFFLE && !mc.theWorld.multiplayerWorld && activeTicks % 3 == 0) shuffleInventory(mc);
 		if(activeEffect == EFFECT_CHAT_SPAM && activeTicks % 2 == 0) showRandomChatSymbols(mc);
 		if(activeEffect == EFFECT_LOG_CORRUPTION) logRandomSymbols();
 		if(activeEffect == EFFECT_WINDOW_SHAKE && !Display.isFullscreen()) {
@@ -194,6 +200,45 @@ public final class NaNManager {
 		}
 	}
 
+	private static void generateLocalBedrockMaze(Minecraft mc) {
+		int originX = MAZE_ORIGIN_X;
+		int originY = MAZE_ORIGIN_Y;
+		int originZ = MAZE_ORIGIN_Z;
+		for(int x = -1; x <= 4; ++x) {
+			for(int z = -1; z <= 64; ++z) {
+				for(int y = 0; y <= 4; ++y) {
+					boolean shell = x == -1 || x == 4 || z == -1 || z == 64 || y == 0 || y == 4;
+					mc.theWorld.setBlockAndMetadataWithNotify(originX + x, originY + y, originZ + z, shell ? Block.bedrock.blockID : 0, 0);
+				}
+			}
+		}
+		for(int z = 3; z < 64; z += 4) {
+			int opening = ((z / 4) % 2 == 0) ? 0 : 3;
+			for(int x = 0; x < 4; ++x) if(x != opening) {
+				for(int y = 1; y <= 3; ++y) {
+					mc.theWorld.setBlockAndMetadataWithNotify(originX + x, originY + y, originZ + z, Block.bedrock.blockID, 0);
+				}
+			}
+		}
+		for(int z = 1; z < 64; z += 4) {
+			mc.theWorld.setBlockAndMetadataWithNotify(originX - 1, originY + 1, originZ + z, Block.torchWood.blockID, 2);
+			mc.theWorld.setBlockAndMetadataWithNotify(originX + 4, originY + 1, originZ + z, Block.torchWood.blockID, 1);
+		}
+		int signX = originX + 1;
+		int signZ = originZ + 63;
+		mc.theWorld.setBlockAndMetadataWithNotify(signX, originY + 1, signZ, Block.signPost.blockID, 0);
+		TileEntitySign sign = (TileEntitySign)mc.theWorld.getBlockTileEntity(signX, originY + 1, signZ);
+		String symbols = "!@#$%^&*()_+-=[]{}<>/?ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+		StringBuffer text = new StringBuffer(15);
+		for(int i = 0; i < 15; ++i) text.append(symbols.charAt(RANDOM.nextInt(symbols.length())));
+		if(sign != null) sign.signText[0] = text.toString();
+		mc.thePlayer.setPositionAndRotation(originX + 1.5D, originY + 1.0D, originZ + 0.5D, 0.0F, 0.0F);
+		mc.thePlayer.motionX = 0.0D;
+		mc.thePlayer.motionY = 0.0D;
+		mc.thePlayer.motionZ = 0.0D;
+		mc.thePlayer.fallDistance = 0.0F;
+	}
+
 	private static void saveWindowPosition() {
 		previousWindowX = Display.getX();
 		previousWindowY = Display.getY();
@@ -206,6 +251,10 @@ public final class NaNManager {
 	}
 
 	private static void resetWorldEffects(Minecraft mc) {
+		activeEffect = 0;
+		activeTicks = 0;
+		delayedInsultTicks = 0;
+		fakeErrorInsults = false;
 		permanentJitter = false;
 		permanentRedButtons = false;
 		permanentWindowTitle = false;
@@ -214,6 +263,27 @@ public final class NaNManager {
 		titleTicks = 0;
 		redButtonTicks = 0;
 		debugCorruptionTicks = 0;
+		wireframeTicks = 0;
+		colorMaskTicks = 0;
+		fovSpikeTicks = 0;
+		tearingTicks = 0;
+		vramLeakTicks = 0;
+		fatalDumpTicks = 0;
+		viewportStrokeTicks = 0;
+		depthDecayTicks = 0;
+		pixelMeltTicks = 0;
+		logicXorTicks = 0;
+		texturePanicTicks = 0;
+		tvStaticTicks = 0;
+		echoSmearTicks = 0;
+		subliminalFlashTicks = 0;
+		voidSlicesTicks = 0;
+		wireframeBloodTicks = 0;
+		vertigoCrushTicks = 0;
+		menuShakeArmed = false;
+		colorMaskRed = false;
+		colorMaskGreen = false;
+		colorMaskBlue = false;
 		if(previousRenderDistance >= 0) {
 			mc.gameSettings.renderDistance = previousRenderDistance;
 			previousRenderDistance = -1;
@@ -287,8 +357,9 @@ public final class NaNManager {
 			previousWindowY = Display.getY();
 			windowPositionSaved = true;
 		}
-		if(effectId == EFFECT_BLOCK_EVENT) spawnLocalBlocks(mc);
-		if(effectId == EFFECT_COBWEB) spawnLocalCobweb(mc);
+		if(!mc.theWorld.multiplayerWorld && effectId == EFFECT_BLOCK_EVENT) spawnLocalBlocks(mc);
+		if(!mc.theWorld.multiplayerWorld && effectId == EFFECT_COBWEB) spawnLocalCobweb(mc);
+		if(!mc.theWorld.multiplayerWorld && effectId == EFFECT_BEDROCK_MAZE) generateLocalBedrockMaze(mc);
 		if(isActive(effectId) && (effectId == EFFECT_VOXEL_COLLAPSE || effectId == EFFECT_FRAME_BLEED ||
 			effectId == EFFECT_RED_BARS || isHorrorSoundEffect(effectId))) {
 			if(effectId == EFFECT_TERRAIN_CORRUPTION || effectId == EFFECT_FOV_SPIKE) {
@@ -311,7 +382,7 @@ public final class NaNManager {
 	}
 
 	public static void beginEffect(int effectId, int durationTicks) {
-		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_VERTIGO_CRUSH) return;
+		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_BEDROCK_MAZE) return;
 		if(effectId == EFFECT_UI_JITTER) permanentJitter = true;
 		if(effectId == EFFECT_RED_BUTTONS) permanentRedButtons = true;
 		if(effectId == EFFECT_WINDOW_TITLE) permanentWindowTitle = true;
@@ -361,8 +432,11 @@ public final class NaNManager {
 	public static boolean debugCoordinatesVisible() { return !permanentDebugCorruption || debugCorruptionTicks < 300; }
 
 	public static String debugCommand(Minecraft mc, String command) {
-		String[] parts = command.trim().split(" ");
+		String[] parts = command.trim().split("\\s+");
 		if(parts.length == 0) return null;
+		if("x".equalsIgnoreCase(parts[0]) && parts.length > 1) {
+			parts[0] = "x" + parts[1];
+		}
 		if("anticlose".equalsIgnoreCase(parts[0])) {
 			GuiChat.setAntiClose(!GuiChat.isAntiCloseEnabled());
 			return "NaN anticlose: " + (GuiChat.isAntiCloseEnabled() ? "enabled" : "disabled");
@@ -446,12 +520,8 @@ public final class NaNManager {
 		int z = MathHelper.floor_double(mc.thePlayer.posZ);
 		if(mc.theWorld.getBlockId(x, y, z) == 0 && Block.signPost.canPlaceBlockAt(mc.theWorld, x, y, z)) {
 			mc.theWorld.setBlockAndMetadataWithNotify(x, y, z, Block.signPost.blockID, 0);
-			TileEntitySign sign = new TileEntitySign();
-			sign.xCoord = x;
-			sign.yCoord = y;
-			sign.zCoord = z;
-			sign.signText[0] = "no way";
-			mc.theWorld.setBlockTileEntity(x, y, z, sign);
+			TileEntitySign sign = (TileEntitySign)mc.theWorld.getBlockTileEntity(x, y, z);
+			if(sign != null) sign.signText[0] = "no way";
 		}
 	}
 
@@ -522,6 +592,7 @@ public final class NaNManager {
 		case EFFECT_VOID_SLICES: return "void_slices";
 		case EFFECT_WIREFRAME_BLOOD: return "wireframe_blood";
 		case EFFECT_VERTIGO_CRUSH: return "vertigo_crush";
+		case EFFECT_BEDROCK_MAZE: return "maze";
 		default: return "unknown";
 		}
 	}
@@ -571,6 +642,7 @@ public final class NaNManager {
 		if("void_slices".equalsIgnoreCase(name) || "void".equalsIgnoreCase(name)) return EFFECT_VOID_SLICES;
 		if("wireframe_blood".equalsIgnoreCase(name) || "bloodwire".equalsIgnoreCase(name)) return EFFECT_WIREFRAME_BLOOD;
 		if("vertigo_crush".equalsIgnoreCase(name) || "vertigo".equalsIgnoreCase(name)) return EFFECT_VERTIGO_CRUSH;
+		if("maze".equalsIgnoreCase(name) || "labyrinth".equalsIgnoreCase(name)) return EFFECT_BEDROCK_MAZE;
 		return 0;
 	}
 
@@ -582,7 +654,9 @@ public final class NaNManager {
 		if(effectId == EFFECT_BLOCK_EVENT) return 20 * 5;
 		if(effectId == EFFECT_COBWEB) return 20 * 8;
 		if(effectId == EFFECT_INSULTS) return 20 * 4;
-		if(effectId == EFFECT_INVENTORY_SHUFFLE || effectId == EFFECT_SIGN_SPAWN || effectId == EFFECT_DROP_ACTIVE) return 1;
+		if(effectId == EFFECT_INVENTORY_SHUFFLE) return 20 * 15;
+		if(effectId == EFFECT_BEDROCK_MAZE) return 1;
+		if(effectId == EFFECT_SIGN_SPAWN || effectId == EFFECT_DROP_ACTIVE) return 1;
 		if(effectId == EFFECT_MINIMAL_RENDER) return 20 * 20;
 		if(effectId == EFFECT_SCREEN_INVERSION) return 20 * 8;
 		if(effectId == EFFECT_WINDOW_SHAKE) return 20 * 10;
@@ -638,7 +712,8 @@ public final class NaNManager {
 		if(effectId == EFFECT_SUBLIMINAL_FLASH) return EFFECT_VOID_SLICES;
 		if(effectId == EFFECT_VOID_SLICES) return EFFECT_WIREFRAME_BLOOD;
 		if(effectId == EFFECT_WIREFRAME_BLOOD) return EFFECT_VERTIGO_CRUSH;
-		if(effectId == EFFECT_VERTIGO_CRUSH) return EFFECT_INVENTORY_CORRUPTION;
+		if(effectId == EFFECT_VERTIGO_CRUSH) return EFFECT_BEDROCK_MAZE;
+		if(effectId == EFFECT_BEDROCK_MAZE) return EFFECT_INVENTORY_CORRUPTION;
 		if(effectId == EFFECT_FOV_SPIKE) return EFFECT_TEARING;
 		if(effectId == EFFECT_INVENTORY_CORRUPTION) return EFFECT_BLOCK_EVENT;
 		if(effectId == EFFECT_COBWEB) return EFFECT_INSULTS;

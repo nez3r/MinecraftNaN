@@ -416,7 +416,7 @@ net/minecraft/src/MovementInput be1228699a60c5421943c985176958a7
 net/minecraft/src/MovementInputFromOptions 6cf9f62ff48a6562832649f100e83c60
 net/minecraft/src/MovingObjectPosition bf0f281fa299f65f842efc9305804ce3
 net/minecraft/src/MusInputStream 2ff8c43ba3f3ef5827d2b677d90a47f8
-net/minecraft/src/NaNManager 6f2dcf73afcd35192a885122fb9ebe86
+net/minecraft/src/NaNManager 0f20c253ea6bb8729bbfb5f0c3bcc5f1
 net/minecraft/src/NBTBase 06858536273e1e8a6fabe856fb0760cb
 net/minecraft/src/NBTTagByte 21e1b9ffee3aa3df48250cca489d74e3
 net/minecraft/src/NBTTagByteArray 8004b8fb3badc6979c10bec186f61877
@@ -467,7 +467,7 @@ net/minecraft/src/Packet18Animation 57da88f529ffae6ae24ef0c627857e48
 net/minecraft/src/Packet19EntityAction 32d5ad7c77f5eed49dafb94b285c8e85
 net/minecraft/src/Packet1Login 5c78fbae466abfbf3e11db2baf11e597
 net/minecraft/src/Packet200Statistic e2ee58a234da52827bd84191be1e1aec
-net/minecraft/src/Packet201HorrorEvent 57a6e24d9f88da4bc4323898d8e05f41
+net/minecraft/src/Packet201HorrorEvent 77e9a3189132aa6c7cbdbb029203a19e
 net/minecraft/src/Packet20NamedEntitySpawn 2d37bffd5dd11d965d397078cbe6875e
 net/minecraft/src/Packet21PickupSpawn 24b184d27d724eb89d3db0f5b745a352
 net/minecraft/src/Packet22Collect 90b716679dedd403f21e2363a3b51625
@@ -566,7 +566,7 @@ net/minecraft/src/RenderWolf 4ab86ee557a31f2425c1fb47523a8dea
 net/minecraft/src/SaveConverterMcRegion 74c242b1db79ac49db2348bbd1b0ce7f
 net/minecraft/src/SaveFormatComparator e15373f659cef92df6ea1d799a7377d1
 net/minecraft/src/SaveFormatOld 54a65284c4e010a74197185c4c1c768a
-net/minecraft/src/SaveHandler 1e1e4adb7a4ca4313d6ff4091de76ed3
+net/minecraft/src/SaveHandler 3ce77b246790710cbf3ac05f85ea7857
 net/minecraft/src/SaveHandlerMP d3833f3c3cf957fd1ca6bd9591e05d46
 net/minecraft/src/SaveOldDir 607958c1b739c2549542150fcbdfd75b
 net/minecraft/src/ScaledResolution 6910d8ef6431b3dbde7c398e9367a234

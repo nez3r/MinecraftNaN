@@ -79,30 +79,36 @@ public class SaveHandler implements ISaveHandler {
 	}
 
 	public WorldInfo loadWorldInfo() {
-		File var1 = new File(this.saveDirectory, "level.dat");
-		NBTTagCompound var2;
-		NBTTagCompound var3;
-		if(var1.exists()) {
+		File[] var1 = new File[]{new File(this.saveDirectory, "level.dat_new"), new File(this.saveDirectory, "level.dat"), new File(this.saveDirectory, "level.dat_old")};
+		for(int var2 = 0; var2 < var1.length; ++var2) {
+			FileInputStream var8 = null;
 			try {
-				var2 = CompressedStreamTools.func_1138_a(new FileInputStream(var1));
-				var3 = var2.getCompoundTag("Data");
-				return new WorldInfo(var3);
-			} catch (Exception var5) {
-				var5.printStackTrace();
+				if(!var1[var2].exists()) continue;
+				var8 = new FileInputStream(var1[var2]);
+				NBTTagCompound var3 = CompressedStreamTools.func_1138_a(var8);
+				NBTTagCompound var4 = var3.getCompoundTag("Data");
+				WorldInfo var5 = new WorldInfo(var4);
+				if(var2 == 0) {
+					System.out.println("Recovered world from interrupted level.dat save: " + var1[var2]);
+					File var6 = new File(this.saveDirectory, "level.dat");
+					if(var6.exists()) var6.delete();
+					if(!var1[var2].renameTo(var6)) {
+						System.out.println("Recovered world data loaded, but temporary file could not be promoted.");
+					}
+				}
+				return var5;
+			} catch (Exception var7) {
+				System.err.println("Failed to load world data from " + var1[var2] + ", trying recovery copy.");
+			} finally {
+				if(var8 != null) {
+					try {
+						var8.close();
+					} catch (IOException var9) {
+						System.err.println("Failed to close world recovery file " + var1[var2]);
+					}
+				}
 			}
 		}
-
-		var1 = new File(this.saveDirectory, "level.dat_old");
-		if(var1.exists()) {
-			try {
-				var2 = CompressedStreamTools.func_1138_a(new FileInputStream(var1));
-				var3 = var2.getCompoundTag("Data");
-				return new WorldInfo(var3);
-			} catch (Exception var4) {
-				var4.printStackTrace();
-			}
-		}
-
 		return null;
 	}
 

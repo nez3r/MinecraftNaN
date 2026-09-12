@@ -4,6 +4,9 @@ import java.util.Random;
 import net.minecraft.server.MinecraftServer;
 
 public final class NaNManager {
+	private static final int MAZE_ORIGIN_X = 1000;
+	private static final int MAZE_ORIGIN_Y = 80;
+	private static final int MAZE_ORIGIN_Z = 500;
 	private static final int HORROR_EVENT = 2;
 	private static final int EFFECT_RED_TEXT = 4;
 	private static final int EFFECT_INVENTORY_CORRUPTION = 5;
@@ -46,6 +49,7 @@ public final class NaNManager {
 	private static final int EFFECT_VOID_SLICES = 43;
 	private static final int EFFECT_WIREFRAME_BLOOD = 44;
 	private static final int EFFECT_VERTIGO_CRUSH = 45;
+	private static final int EFFECT_BEDROCK_MAZE = 46;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
 	private final MinecraftServer server;
@@ -60,6 +64,7 @@ public final class NaNManager {
 	private int[] redBarsTicks = new int[0];
 	private int[] logTicks = new int[0];
 	private int[] activeEffectTicks = new int[0];
+	private int[] activeEffectIds = new int[0];
 	private int intervalMultiplier = 1;
 
 	public NaNManager(MinecraftServer server) {
@@ -74,6 +79,7 @@ public final class NaNManager {
 			this.redBarsTicks = new int[this.server.worldMngr.length];
 			this.logTicks = new int[this.server.worldMngr.length];
 			this.activeEffectTicks = new int[this.server.worldMngr.length];
+			this.activeEffectIds = new int[this.server.worldMngr.length];
 			for(int i = 0; i < this.ticksUntilEvent.length; ++i) this.ticksUntilEvent[i] = nextInterval();
 		}
 		for(int i = 0; i < this.server.worldMngr.length; ++i) {
@@ -83,10 +89,15 @@ public final class NaNManager {
 				this.redBarsTicks[i] = 0;
 				this.logTicks[i] = 0;
 				this.activeEffectTicks[i] = 0;
+				this.activeEffectIds[i] = 0;
 				this.ticksUntilEvent[i] = nextInterval();
 				continue;
 			}
 			if(this.activeEffectTicks[i] > 0) --this.activeEffectTicks[i];
+			if(this.activeEffectTicks[i] > 0 && this.activeEffectIds[i] == EFFECT_INVENTORY_SHUFFLE &&
+				this.activeEffectTicks[i] % 3 == 0) {
+				applyPlayerEvent(EFFECT_INVENTORY_SHUFFLE, world);
+			}
 			if(this.redBarsTicks[i] > 0 && --this.redBarsTicks[i] == 0) {
 				world.setWorldTime(world.getWorldTime() - world.getWorldTime() % 24000L + 13000L);
 			}
@@ -106,6 +117,7 @@ public final class NaNManager {
 			this.server.configManager.sendPacketToAllPlayersInDimension(
 				new Packet201HorrorEvent(HORROR_EVENT, effect, duration, itemId, itemCount, ++this.eventSequence, eventMessage(effect)), world.worldProvider.worldType);
 			this.activeEffectTicks[i] = duration;
+			this.activeEffectIds[i] = effect;
 			this.nextEffect = nextEffectId(this.nextEffect);
 			this.ticksUntilEvent[i] = this.nextEffect == EFFECT_INVENTORY_CORRUPTION ? 20 * 60 * 2 : nextInterval();
 		}
@@ -117,8 +129,11 @@ public final class NaNManager {
 	}
 
 	public String debugCommand(String command) {
-		String[] parts = command.trim().split(" ");
+		String[] parts = command.trim().split("\\s+");
 		if(parts.length == 0) return null;
+		if("x".equalsIgnoreCase(parts[0]) && parts.length > 1) {
+			parts[0] = "x" + parts[1];
+		}
 		if("event".equalsIgnoreCase(parts[0]) && parts.length > 2 && "inventory".equalsIgnoreCase(parts[1]) && "clear".equalsIgnoreCase(parts[2])) {
 			for(int i = 0; i < this.server.configManager.playerEntities.size(); ++i) {
 				EntityPlayerMP player = (EntityPlayerMP)this.server.configManager.playerEntities.get(i);
@@ -183,7 +198,9 @@ public final class NaNManager {
 			for(int i = 0; i < this.ticksUntilEvent.length; ++i) this.ticksUntilEvent[i] = nextInterval();
 		}
 		if(this.activeEffectTicks.length != this.server.worldMngr.length) this.activeEffectTicks = new int[this.server.worldMngr.length];
+		if(this.activeEffectIds.length != this.server.worldMngr.length) this.activeEffectIds = new int[this.server.worldMngr.length];
 		for(int i = 0; i < this.activeEffectTicks.length; ++i) this.activeEffectTicks[i] = duration;
+		for(int i = 0; i < this.activeEffectIds.length; ++i) this.activeEffectIds[i] = effect;
 		for(int i = 0; i < this.ticksUntilEvent.length; ++i) this.ticksUntilEvent[i] = nextInterval();
 		if(effect == EFFECT_RED_BARS) {
 			if(this.redBarsTicks.length != this.server.worldMngr.length) this.redBarsTicks = new int[this.server.worldMngr.length];
@@ -241,6 +258,7 @@ public final class NaNManager {
 		case EFFECT_VOID_SLICES: return "void_slices";
 		case EFFECT_WIREFRAME_BLOOD: return "wireframe_blood";
 		case EFFECT_VERTIGO_CRUSH: return "vertigo_crush";
+		case EFFECT_BEDROCK_MAZE: return "maze";
 		default: return "unknown";
 		}
 	}
@@ -290,6 +308,7 @@ public final class NaNManager {
 		if("void_slices".equalsIgnoreCase(name) || "void".equalsIgnoreCase(name)) return EFFECT_VOID_SLICES;
 		if("wireframe_blood".equalsIgnoreCase(name) || "bloodwire".equalsIgnoreCase(name)) return EFFECT_WIREFRAME_BLOOD;
 		if("vertigo_crush".equalsIgnoreCase(name) || "vertigo".equalsIgnoreCase(name)) return EFFECT_VERTIGO_CRUSH;
+		if("maze".equalsIgnoreCase(name) || "labyrinth".equalsIgnoreCase(name)) return EFFECT_BEDROCK_MAZE;
 		return 0;
 	}
 
@@ -302,7 +321,8 @@ public final class NaNManager {
 		if(effect == EFFECT_BLOCK_EVENT) return 20 * 5;
 		if(effect == EFFECT_COBWEB) return 20 * 8;
 		if(effect == EFFECT_INSULTS) return 20 * 4;
-		if(effect == EFFECT_INVENTORY_SHUFFLE || effect == EFFECT_SIGN_SPAWN || effect == EFFECT_DROP_ACTIVE) return 1;
+		if(effect == EFFECT_INVENTORY_SHUFFLE) return 20 * 15;
+		if(effect == EFFECT_SIGN_SPAWN || effect == EFFECT_DROP_ACTIVE) return 1;
 		if(effect == EFFECT_MINIMAL_RENDER) return 20 * 20;
 		if(effect == EFFECT_SCREEN_INVERSION) return 20 * 8;
 		if(effect == EFFECT_WINDOW_SHAKE) return 20 * 10;
@@ -323,6 +343,7 @@ public final class NaNManager {
 		if(effect == EFFECT_ECHO_SMEAR || effect == EFFECT_SUBLIMINAL_FLASH ||
 			effect == EFFECT_VOID_SLICES || effect == EFFECT_WIREFRAME_BLOOD ||
 			effect == EFFECT_VERTIGO_CRUSH) return 20 * 10;
+		if(effect == EFFECT_BEDROCK_MAZE) return 1;
 		if(effect == EFFECT_FAKE_ERROR) return 20 * 12;
 		if(effect == EFFECT_CHAT_SPAM) return 20 * 10;
 		if(effect == EFFECT_UI_JITTER || effect == EFFECT_RED_BUTTONS || effect == EFFECT_WINDOW_TITLE ||
@@ -359,6 +380,7 @@ public final class NaNManager {
 		if(effect == EFFECT_VOID_SLICES) return EFFECT_WIREFRAME_BLOOD;
 		if(effect == EFFECT_WIREFRAME_BLOOD) return EFFECT_VERTIGO_CRUSH;
 		if(effect == EFFECT_VERTIGO_CRUSH) return EFFECT_INVENTORY_CORRUPTION;
+		if(effect == EFFECT_BEDROCK_MAZE) return EFFECT_INVENTORY_CORRUPTION;
 		if(effect == EFFECT_FOV_SPIKE) return EFFECT_TEARING;
 		if(effect == EFFECT_INVENTORY_CORRUPTION) return nextConstrainedEffect();
 		if(effect == EFFECT_BLOCK_EVENT || effect == EFFECT_COBWEB || effect == EFFECT_INSULTS) {
@@ -420,6 +442,13 @@ public final class NaNManager {
 			}
 			return;
 		}
+		if(effect == EFFECT_BEDROCK_MAZE) {
+			java.util.List players = world == null ? this.server.configManager.playerEntities : world.playerEntities;
+			for(int i = 0; i < players.size(); ++i) {
+				generateBedrockMaze((EntityPlayerMP)players.get(i));
+			}
+			return;
+		}
 		if(effect != EFFECT_INVENTORY_SHUFFLE && effect != EFFECT_SIGN_SPAWN && effect != EFFECT_DROP_ACTIVE) return;
 		java.util.List players = world == null ? this.server.configManager.playerEntities : world.playerEntities;
 		for(int i = 0; i < players.size(); ++i) {
@@ -435,12 +464,60 @@ public final class NaNManager {
 					allItems[slot] = allItems[swap];
 					allItems[swap] = item;
 				}
+
+				/*
+				private void generateBedrockMaze(EntityPlayerMP player) {
+					int originX = MAZE_ORIGIN_X;
+					int originY = MAZE_ORIGIN_Y;
+					int originZ = MAZE_ORIGIN_Z;
+					int bedrock = Block.bedrock.blockID;
+					int torch = Block.torchWood.blockID;
+					for(int x = -1; x <= 4; ++x) {
+						for(int z = -1; z <= 64; ++z) {
+							for(int y = 0; y <= 4; ++y) {
+								boolean shell = x == -1 || x == 4 || z == -1 || z == 64 || y == 0 || y == 4;
+								player.worldObj.setBlockAndMetadataWithNotify(originX + x, originY + y, originZ + z, shell ? bedrock : 0, 0);
+							}
+						}
+					}
+					for(int z = 3; z < 64; z += 4) {
+						int opening = ((z / 4) % 2 == 0) ? 0 : 3;
+						for(int x = 0; x < 4; ++x) {
+							if(x != opening) {
+								player.worldObj.setBlockAndMetadataWithNotify(originX + x, originY + 1, originZ + z, bedrock, 0);
+								player.worldObj.setBlockAndMetadataWithNotify(originX + x, originY + 2, originZ + z, bedrock, 0);
+								player.worldObj.setBlockAndMetadataWithNotify(originX + x, originY + 3, originZ + z, bedrock, 0);
+							}
+						}
+					}
+					for(int z = 1; z < 64; z += 4) {
+						player.worldObj.setBlockAndMetadataWithNotify(originX - 1, originY + 1, originZ + z, torch, 2);
+						player.worldObj.setBlockAndMetadataWithNotify(originX + 4, originY + 1, originZ + z, torch, 1);
+					}
+					int signX = originX + 1;
+					int signZ = originZ + 63;
+					player.worldObj.setBlockAndMetadataWithNotify(signX, originY + 1, signZ, Block.signPost.blockID, 0);
+					TileEntitySign sign = (TileEntitySign)player.worldObj.getBlockTileEntity(signX, originY + 1, signZ);
+					String symbols = "!@#$%^&*()_+-=[]{}<>/?ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+					StringBuffer text = new StringBuffer(15);
+					for(int i = 0; i < 15; ++i) text.append(symbols.charAt(this.random.nextInt(symbols.length())));
+					if(sign != null) sign.signText[0] = text.toString();
+					double spawnX = originX + 0.5D + (player.entityId & 3);
+					player.setLocationAndAngles(spawnX, originY + 1.0D, originZ + 0.5D, 0.0F, 0.0F);
+					player.motionX = 0.0D;
+					player.motionY = 0.0D;
+					player.motionZ = 0.0D;
+					player.fallDistance = 0.0F;
+					player.playerNetServerHandler.teleportTo(player.posX, player.posY, player.posZ, player.rotationYaw, player.rotationPitch);
+				}
+				*/
 				index = 0;
 				for(int slot = 0; slot < player.inventory.mainInventory.length; ++slot) player.inventory.mainInventory[slot] = allItems[index++];
 				for(int slot = 0; slot < player.inventory.armorInventory.length; ++slot) player.inventory.armorInventory[slot] = allItems[index++];
 				for(int slot = 0; slot < 5; ++slot) {
 					player.playerNetServerHandler.sendPacket(new Packet5PlayerInventory(player.entityId, slot, player.getEquipmentInSlot(slot)));
 				}
+				player.updateCraftingInventory(player.currentCraftingInventory, player.currentCraftingInventory.func_28127_b());
 			} else if(effect == EFFECT_DROP_ACTIVE) {
 				ItemStack active = player.inventory.decrStackSize(player.inventory.currentItem, player.inventory.getCurrentItem() == null ? 0 : player.inventory.getCurrentItem().stackSize);
 				if(active != null) player.dropPlayerItem(active);
@@ -450,15 +527,49 @@ public final class NaNManager {
 				int z = MathHelper.floor_double(player.posZ);
 				if(player.worldObj.getBlockId(x, y, z) == 0 && Block.signPost.canPlaceBlockAt(player.worldObj, x, y, z)) {
 					player.worldObj.setBlockAndMetadataWithNotify(x, y, z, Block.signPost.blockID, 0);
-					TileEntitySign sign = new TileEntitySign();
-					sign.xCoord = x;
-					sign.yCoord = y;
-					sign.zCoord = z;
-					sign.signText[0] = "no way";
-					player.worldObj.setBlockTileEntity(x, y, z, sign);
+					TileEntitySign sign = (TileEntitySign)player.worldObj.getBlockTileEntity(x, y, z);
+					if(sign != null) sign.signText[0] = "no way";
 				}
 			}
 		}
+	}
+
+	private void generateBedrockMaze(EntityPlayerMP player) {
+		int originX = MAZE_ORIGIN_X;
+		int originY = MAZE_ORIGIN_Y;
+		int originZ = MAZE_ORIGIN_Z;
+		int bedrock = Block.bedrock.blockID;
+		for(int x = -1; x <= 4; ++x) {
+			for(int z = -1; z <= 64; ++z) {
+				for(int y = 0; y <= 4; ++y) {
+					boolean shell = x == -1 || x == 4 || z == -1 || z == 64 || y == 0 || y == 4;
+					player.worldObj.setBlockAndMetadataWithNotify(originX + x, originY + y, originZ + z, shell ? bedrock : 0, 0);
+				}
+			}
+		}
+		for(int z = 3; z < 64; z += 4) {
+			int opening = ((z / 4) % 2 == 0) ? 0 : 3;
+			for(int x = 0; x < 4; ++x) if(x != opening) {
+				for(int y = 1; y <= 3; ++y) {
+					player.worldObj.setBlockAndMetadataWithNotify(originX + x, originY + y, originZ + z, bedrock, 0);
+				}
+			}
+		}
+		for(int z = 1; z < 64; z += 4) {
+			player.worldObj.setBlockAndMetadataWithNotify(originX - 1, originY + 1, originZ + z, Block.torchWood.blockID, 2);
+			player.worldObj.setBlockAndMetadataWithNotify(originX + 4, originY + 1, originZ + z, Block.torchWood.blockID, 1);
+		}
+		int signX = originX + 1;
+		int signZ = originZ + 63;
+		player.worldObj.setBlockAndMetadataWithNotify(signX, originY + 1, signZ, Block.signPost.blockID, 0);
+		TileEntitySign sign = (TileEntitySign)player.worldObj.getBlockTileEntity(signX, originY + 1, signZ);
+		String symbols = "!@#$%^&*()_+-=[]{}<>/?ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+		StringBuffer text = new StringBuffer(15);
+		for(int i = 0; i < 15; ++i) text.append(symbols.charAt(this.random.nextInt(symbols.length())));
+		if(sign != null) sign.signText[0] = text.toString();
+		double spawnX = originX + 0.5D + (player.entityId & 3);
+		player.setLocationAndAngles(spawnX, originY + 1.0D, originZ + 0.5D, 0.0F, 0.0F);
+		player.playerNetServerHandler.teleportTo(player.posX, player.posY, player.posZ, player.rotationYaw, player.rotationPitch);
 	}
 
 	private int randomItemId() {
@@ -477,7 +588,9 @@ public final class NaNManager {
 	private void giveItemToPlayers(int itemId, int itemCount, WorldServer world) {
 		java.util.List players = world == null ? this.server.configManager.playerEntities : world.playerEntities;
 		for(int i = 0; i < players.size(); ++i) {
-			((EntityPlayerMP)players.get(i)).inventory.addItemStackToInventory(new ItemStack(itemId, itemCount, 0));
+			EntityPlayerMP player = (EntityPlayerMP)players.get(i);
+			player.inventory.addItemStackToInventory(new ItemStack(itemId, itemCount, 0));
+			player.updateCraftingInventory(player.currentCraftingInventory, player.currentCraftingInventory.func_28127_b());
 		}
 	}
 
