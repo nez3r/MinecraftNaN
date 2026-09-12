@@ -84,10 +84,16 @@ public class SoundManager {
 	}
 
 	public void addSound(String var1, File var2) {
-		this.soundPoolSounds.addSound(var1, var2);
-		if(var1.startsWith("glitch/")) {
+		var1 = var1.replace('\\', '/');
+		String resourcePath = var1.toLowerCase();
+		if(resourcePath.startsWith("sound/glitch/") || resourcePath.startsWith("newsound/glitch/")) {
+			var1 = var1.substring(var1.indexOf('/') + 1);
+		}
+		if(resourcePath.startsWith("glitch/") || var1.toLowerCase().startsWith("glitch/")) {
+			if(!var1.toLowerCase().startsWith("glitch/")) var1 = "glitch/" + var1;
 			System.out.println("Registered horror sound: " + var1);
 		}
+		this.soundPoolSounds.addSound(var1, var2);
 	}
 
 	public void addStreaming(String var1, File var2) {

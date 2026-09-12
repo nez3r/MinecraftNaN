@@ -7,6 +7,7 @@ public final class NaNManager {
 	private static final int MAZE_ORIGIN_X = 1000;
 	private static final int MAZE_ORIGIN_Y = 80;
 	private static final int MAZE_ORIGIN_Z = 500;
+	private static final int MAZE_TELEPORT_Y = 87;
 	private static final int HORROR_EVENT = 2;
 	private static final int EFFECT_RED_TEXT = 4;
 	private static final int EFFECT_INVENTORY_CORRUPTION = 5;
@@ -50,6 +51,7 @@ public final class NaNManager {
 	private static final int EFFECT_WIREFRAME_BLOOD = 44;
 	private static final int EFFECT_VERTIGO_CRUSH = 45;
 	private static final int EFFECT_BEDROCK_MAZE = 46;
+	private static final int EFFECT_CRASH = 47;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
 	private final MinecraftServer server;
@@ -119,7 +121,8 @@ public final class NaNManager {
 			this.activeEffectTicks[i] = duration;
 			this.activeEffectIds[i] = effect;
 			this.nextEffect = nextEffectId(this.nextEffect);
-			this.ticksUntilEvent[i] = this.nextEffect == EFFECT_INVENTORY_CORRUPTION ? 20 * 60 * 2 : nextInterval();
+			this.ticksUntilEvent[i] = this.nextEffect == EFFECT_INVENTORY_CORRUPTION
+				? Math.max(1, (20 * 60 * 2) / this.intervalMultiplier) : nextInterval();
 		}
 	}
 
@@ -149,7 +152,9 @@ public final class NaNManager {
 				if(multiplier < 1) return "Usage: /x<number>";
 				for(int i = 0; i < this.ticksUntilEvent.length; ++i) {
 					if(this.activeEffectTicks[i] == 0) {
-						this.ticksUntilEvent[i] = Math.max(1, this.ticksUntilEvent[i] * this.intervalMultiplier / multiplier);
+						long adjustedTicks = (long)this.ticksUntilEvent[i] * this.intervalMultiplier / multiplier;
+						this.ticksUntilEvent[i] = Math.max(1,
+							(int)Math.min((long)this.ticksUntilEvent[i], adjustedTicks));
 					}
 				}
 				this.intervalMultiplier = multiplier;
@@ -259,6 +264,7 @@ public final class NaNManager {
 		case EFFECT_WIREFRAME_BLOOD: return "wireframe_blood";
 		case EFFECT_VERTIGO_CRUSH: return "vertigo_crush";
 		case EFFECT_BEDROCK_MAZE: return "maze";
+		case EFFECT_CRASH: return "crash";
 		default: return "unknown";
 		}
 	}
@@ -309,6 +315,7 @@ public final class NaNManager {
 		if("wireframe_blood".equalsIgnoreCase(name) || "bloodwire".equalsIgnoreCase(name)) return EFFECT_WIREFRAME_BLOOD;
 		if("vertigo_crush".equalsIgnoreCase(name) || "vertigo".equalsIgnoreCase(name)) return EFFECT_VERTIGO_CRUSH;
 		if("maze".equalsIgnoreCase(name) || "labyrinth".equalsIgnoreCase(name)) return EFFECT_BEDROCK_MAZE;
+		if("crash".equalsIgnoreCase(name)) return EFFECT_CRASH;
 		return 0;
 	}
 
@@ -344,6 +351,7 @@ public final class NaNManager {
 			effect == EFFECT_VOID_SLICES || effect == EFFECT_WIREFRAME_BLOOD ||
 			effect == EFFECT_VERTIGO_CRUSH) return 20 * 10;
 		if(effect == EFFECT_BEDROCK_MAZE) return 1;
+		if(effect == EFFECT_CRASH) return 20 * 16;
 		if(effect == EFFECT_FAKE_ERROR) return 20 * 12;
 		if(effect == EFFECT_CHAT_SPAM) return 20 * 10;
 		if(effect == EFFECT_UI_JITTER || effect == EFFECT_RED_BUTTONS || effect == EFFECT_WINDOW_TITLE ||
@@ -445,7 +453,9 @@ public final class NaNManager {
 		if(effect == EFFECT_BEDROCK_MAZE) {
 			java.util.List players = world == null ? this.server.configManager.playerEntities : world.playerEntities;
 			for(int i = 0; i < players.size(); ++i) {
-				generateBedrockMaze((EntityPlayerMP)players.get(i));
+				EntityPlayerMP player = (EntityPlayerMP)players.get(i);
+				if(i == 0) generateBedrockMaze(player);
+				else teleportPlayerToMaze(player);
 			}
 			return;
 		}
@@ -503,11 +513,12 @@ public final class NaNManager {
 					for(int i = 0; i < 15; ++i) text.append(symbols.charAt(this.random.nextInt(symbols.length())));
 					if(sign != null) sign.signText[0] = text.toString();
 					double spawnX = originX + 0.5D + (player.entityId & 3);
-					player.setLocationAndAngles(spawnX, originY + 1.0D, originZ + 0.5D, 0.0F, 0.0F);
+					player.setPositionAndRotation(spawnX, MAZE_TELEPORT_Y, originZ + 0.5D, 0.0F, 0.0F);
 					player.motionX = 0.0D;
 					player.motionY = 0.0D;
 					player.motionZ = 0.0D;
 					player.fallDistance = 0.0F;
+					player.onGround = true;
 					player.playerNetServerHandler.teleportTo(player.posX, player.posY, player.posZ, player.rotationYaw, player.rotationPitch);
 				}
 				*/
@@ -541,6 +552,14 @@ public final class NaNManager {
 		int bedrock = Block.bedrock.blockID;
 		for(int x = -1; x <= 4; ++x) {
 			for(int z = -1; z <= 64; ++z) {
+				for(int y = 70; y <= 110; ++y) {
+					player.worldObj.removeBlockTileEntity(originX + x, y, originZ + z);
+					player.worldObj.setBlockAndMetadataWithNotify(originX + x, y, originZ + z, 0, 0);
+				}
+			}
+		}
+		for(int x = -1; x <= 4; ++x) {
+			for(int z = -1; z <= 64; ++z) {
 				for(int y = 0; y <= 4; ++y) {
 					boolean shell = x == -1 || x == 4 || z == -1 || z == 64 || y == 0 || y == 4;
 					player.worldObj.setBlockAndMetadataWithNotify(originX + x, originY + y, originZ + z, shell ? bedrock : 0, 0);
@@ -556,19 +575,28 @@ public final class NaNManager {
 			}
 		}
 		for(int z = 1; z < 64; z += 4) {
-			player.worldObj.setBlockAndMetadataWithNotify(originX - 1, originY + 1, originZ + z, Block.torchWood.blockID, 2);
-			player.worldObj.setBlockAndMetadataWithNotify(originX + 4, originY + 1, originZ + z, Block.torchWood.blockID, 1);
+			player.worldObj.setBlockAndMetadataWithNotify(originX, originY + 1, originZ + z, Block.torchWood.blockID, 2);
+			player.worldObj.setBlockAndMetadataWithNotify(originX + 3, originY + 1, originZ + z, Block.torchWood.blockID, 1);
 		}
 		int signX = originX + 1;
-		int signZ = originZ + 63;
+		int signZ = originZ + 62;
 		player.worldObj.setBlockAndMetadataWithNotify(signX, originY + 1, signZ, Block.signPost.blockID, 0);
 		TileEntitySign sign = (TileEntitySign)player.worldObj.getBlockTileEntity(signX, originY + 1, signZ);
 		String symbols = "!@#$%^&*()_+-=[]{}<>/?ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 		StringBuffer text = new StringBuffer(15);
 		for(int i = 0; i < 15; ++i) text.append(symbols.charAt(this.random.nextInt(symbols.length())));
 		if(sign != null) sign.signText[0] = text.toString();
-		double spawnX = originX + 0.5D + (player.entityId & 3);
-		player.setLocationAndAngles(spawnX, originY + 1.0D, originZ + 0.5D, 0.0F, 0.0F);
+		teleportPlayerToMaze(player);
+	}
+
+	private void teleportPlayerToMaze(EntityPlayerMP player) {
+		double spawnX = MAZE_ORIGIN_X + 0.5D + (player.entityId & 3);
+		player.setPositionAndRotation(spawnX, MAZE_TELEPORT_Y, MAZE_ORIGIN_Z + 0.5D, 0.0F, 0.0F);
+		player.motionX = 0.0D;
+		player.motionY = 0.0D;
+		player.motionZ = 0.0D;
+		player.fallDistance = 0.0F;
+		player.onGround = true;
 		player.playerNetServerHandler.teleportTo(player.posX, player.posY, player.posZ, player.rotationYaw, player.rotationPitch);
 	}
 

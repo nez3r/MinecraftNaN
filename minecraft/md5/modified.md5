@@ -1,4 +1,4 @@
-net/minecraft/client/Minecraft 99488ec3010a8d236abbf7ad2e970e2c
+net/minecraft/client/Minecraft d8e670fdd21034d667672263589fe21e
 net/minecraft/client/MinecraftApplet 868a2ecd7975bf8b0877c06b41ecdaf0
 net/minecraft/isom/IsomPreviewApplet 5bae4e9117e7dc2bcf93a14e5a8a5c61
 net/minecraft/src/Achievement a1eee83349438163c4e062b8c8ebc49f
@@ -416,7 +416,7 @@ net/minecraft/src/MovementInput be1228699a60c5421943c985176958a7
 net/minecraft/src/MovementInputFromOptions 6cf9f62ff48a6562832649f100e83c60
 net/minecraft/src/MovingObjectPosition bf0f281fa299f65f842efc9305804ce3
 net/minecraft/src/MusInputStream 2ff8c43ba3f3ef5827d2b677d90a47f8
-net/minecraft/src/NaNManager 0f20c253ea6bb8729bbfb5f0c3bcc5f1
+net/minecraft/src/NaNManager 99428f358521665d7f586c664eabab7f
 net/minecraft/src/NBTBase 06858536273e1e8a6fabe856fb0760cb
 net/minecraft/src/NBTTagByte 21e1b9ffee3aa3df48250cca489d74e3
 net/minecraft/src/NBTTagByteArray 8004b8fb3badc6979c10bec186f61877
@@ -581,7 +581,7 @@ net/minecraft/src/SlotCrafting 284339ac4ec35b47d4a8fa219c828e47
 net/minecraft/src/SlotFurnace bf928b8d1a840e85aaa3636a2193c761
 net/minecraft/src/SorterStatsBlock 94d0f11f64c106980388a063cd623bd8
 net/minecraft/src/SorterStatsItem b9eb568cbeb2169208008302a5467621
-net/minecraft/src/SoundManager 9b8ef2b34dae707b4ac5df8526698ca0
+net/minecraft/src/SoundManager fd539a24df9c836ec2f41a0671296bf7
 net/minecraft/src/SoundPool 4dd61b489cc9695ec25bd5e9a6f417f7
 net/minecraft/src/SoundPoolEntry 2052f402815fc7daf10992dc6d81d98d
 net/minecraft/src/SpawnerAnimals 5e43ea5d9594ac6a51749555d4125bef

@@ -1370,8 +1370,13 @@ public abstract class Minecraft implements Runnable {
 	}
 
 	public void installResource(String var1, File var2) {
-		if(var1.startsWith("glitch/")) {
-			this.sndManager.addSound(var1, var2);
+		var1 = var1.replace('\\', '/');
+		String resourcePath = var1.toLowerCase();
+		if(resourcePath.startsWith("glitch/") || resourcePath.startsWith("sound/glitch/") ||
+			resourcePath.startsWith("newsound/glitch/")) {
+			int prefixLength = resourcePath.startsWith("glitch/") ? 0 :
+				(resourcePath.startsWith("sound/") ? 6 : 9);
+			this.sndManager.addSound("glitch/" + var1.substring(prefixLength).toLowerCase(), var2);
 			return;
 		}
 		int var3 = var1.indexOf("/");

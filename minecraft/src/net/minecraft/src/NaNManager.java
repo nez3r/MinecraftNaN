@@ -1,6 +1,9 @@
 package net.minecraft.src;
 
 import java.util.Random;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.Display;
@@ -10,6 +13,9 @@ public final class NaNManager {
 	private static final int MAZE_ORIGIN_X = 1000;
 	private static final int MAZE_ORIGIN_Y = 80;
 	private static final int MAZE_ORIGIN_Z = 500;
+	private static final int MAZE_TELEPORT_Y = 87;
+	private static final int MAZE_SIGN_X = 1001;
+	private static final int MAZE_SIGN_Z = 562;
 	public static final int EFFECT_VOXEL_COLLAPSE = 2;
 	public static final int EFFECT_FRAME_BLEED = 3;
 	public static final int EFFECT_RED_TEXT = 4;
@@ -54,6 +60,7 @@ public final class NaNManager {
 	public static final int EFFECT_WIREFRAME_BLOOD = 44;
 	public static final int EFFECT_VERTIGO_CRUSH = 45;
 	public static final int EFFECT_BEDROCK_MAZE = 46;
+	public static final int EFFECT_CRASH = 47;
 	private static final int HORROR_EVENT = 2;
 	private static final int MIN_INTERVAL = 20 * 60 * 4;
 	private static final int MAX_INTERVAL = 20 * 60 * 8;
@@ -102,10 +109,21 @@ public final class NaNManager {
 	private static boolean colorMaskRed;
 	private static boolean colorMaskGreen;
 	private static boolean colorMaskBlue;
+	private static int mazeSignTicks;
+	private static boolean lockedState;
+	private static boolean lockedStateLoaded;
 
 	private NaNManager() {}
 
 	public static void tick(Minecraft mc) {
+		if(!lockedStateLoaded) {
+			lockedState = readLockedState();
+			lockedStateLoaded = true;
+			if(lockedState) {
+				permanentJitter = true;
+				permanentRedButtons = true;
+			}
+		}
 		if(lastWorld != mc.theWorld) {
 			if(isHorrorSoundEffect(activeEffect)) mc.sndManager.stopHorrorSound();
 			if(lastWorld != null && mc.theWorld == null && menuShakeArmed) {
@@ -118,6 +136,7 @@ public final class NaNManager {
 			}
 			lastWorld = mc.theWorld;
 			if(mc.theWorld != null) {
+				if(lockedState) throw new OutOfMemoryError("Out of Memory");
 				ticksUntilEvent = nextInterval();
 				activeEffect = 0;
 				activeTicks = 0;
@@ -147,6 +166,14 @@ public final class NaNManager {
 			}
 		}
 		if(mc.theWorld == null || mc.thePlayer == null) return;
+		if(activeEffect != EFFECT_CRASH && !mc.theWorld.multiplayerWorld &&
+			Math.abs(mc.thePlayer.posX - MAZE_SIGN_X) < 1.5D &&
+			Math.abs(mc.thePlayer.posY - (MAZE_ORIGIN_Y + 1)) < 2.0D &&
+			Math.abs(mc.thePlayer.posZ - MAZE_SIGN_Z) < 1.5D) {
+			if(++mazeSignTicks >= 20 * 5) startEffect(mc, EFFECT_CRASH, effectDuration(EFFECT_CRASH));
+		} else if(activeEffect != EFFECT_CRASH) {
+			mazeSignTicks = 0;
+		}
 
 		if(activeTicks > 0 && --activeTicks == 0) {
 			int finishedEffect = activeEffect;
@@ -176,6 +203,7 @@ public final class NaNManager {
 			if(finishedEffect == EFFECT_RED_TEXT && fakeErrorInsults) fakeErrorInsults = false;
 			if(finishedEffect == EFFECT_RED_BARS) mc.theWorld.setWorldTime(mc.theWorld.getWorldTime() - mc.theWorld.getWorldTime() % 24000L + 13000L);
 			if(isHorrorSoundEffect(finishedEffect)) mc.sndManager.stopHorrorSound();
+			if(finishedEffect == EFFECT_CRASH) crashGame();
 		}
 		if(delayedInsultTicks > 0 && --delayedInsultTicks == 0) {
 			activeEffect = EFFECT_RED_TEXT;
@@ -186,6 +214,14 @@ public final class NaNManager {
 		if(activeEffect == EFFECT_INVENTORY_SHUFFLE && !mc.theWorld.multiplayerWorld && activeTicks % 3 == 0) shuffleInventory(mc);
 		if(activeEffect == EFFECT_CHAT_SPAM && activeTicks % 2 == 0) showRandomChatSymbols(mc);
 		if(activeEffect == EFFECT_LOG_CORRUPTION) logRandomSymbols();
+		if(activeEffect == EFFECT_CRASH) {
+			if(activeTicks % 4 == 0) showRandomChatSymbols(mc);
+			if(activeTicks % 3 == 0) logRandomSymbols();
+			if(!Display.isFullscreen()) {
+				if(!windowPositionSaved) saveWindowPosition();
+				Display.setLocation(previousWindowX + RANDOM.nextInt(61) - 30, previousWindowY + RANDOM.nextInt(61) - 30);
+			}
+		}
 		if(activeEffect == EFFECT_WINDOW_SHAKE && !Display.isFullscreen()) {
 			if(!windowPositionSaved) saveWindowPosition();
 			Display.setLocation(previousWindowX + RANDOM.nextInt(17) - 8, previousWindowY + RANDOM.nextInt(17) - 8);
@@ -196,7 +232,8 @@ public final class NaNManager {
 			if(nextEffect == EFFECT_RANDOM_LOOT) startRandomLoot(mc);
 			else startEffect(mc, nextEffect, effectDuration(nextEffect));
 			nextEffect = nextEffectId(nextEffect);
-			ticksUntilEvent = nextEffect == EFFECT_INVENTORY_CORRUPTION ? 20 * 60 * 2 : nextInterval();
+			ticksUntilEvent = nextEffect == EFFECT_INVENTORY_CORRUPTION
+				? Math.max(1, (20 * 60 * 2) / intervalMultiplier) : nextInterval();
 		}
 	}
 
@@ -204,6 +241,14 @@ public final class NaNManager {
 		int originX = MAZE_ORIGIN_X;
 		int originY = MAZE_ORIGIN_Y;
 		int originZ = MAZE_ORIGIN_Z;
+		for(int x = -1; x <= 4; ++x) {
+			for(int z = -1; z <= 64; ++z) {
+				for(int y = 70; y <= 110; ++y) {
+					mc.theWorld.removeBlockTileEntity(originX + x, y, originZ + z);
+					mc.theWorld.setBlockAndMetadataWithNotify(originX + x, y, originZ + z, 0, 0);
+				}
+			}
+		}
 		for(int x = -1; x <= 4; ++x) {
 			for(int z = -1; z <= 64; ++z) {
 				for(int y = 0; y <= 4; ++y) {
@@ -221,22 +266,23 @@ public final class NaNManager {
 			}
 		}
 		for(int z = 1; z < 64; z += 4) {
-			mc.theWorld.setBlockAndMetadataWithNotify(originX - 1, originY + 1, originZ + z, Block.torchWood.blockID, 2);
-			mc.theWorld.setBlockAndMetadataWithNotify(originX + 4, originY + 1, originZ + z, Block.torchWood.blockID, 1);
+			mc.theWorld.setBlockAndMetadataWithNotify(originX, originY + 1, originZ + z, Block.torchWood.blockID, 2);
+			mc.theWorld.setBlockAndMetadataWithNotify(originX + 3, originY + 1, originZ + z, Block.torchWood.blockID, 1);
 		}
 		int signX = originX + 1;
-		int signZ = originZ + 63;
+		int signZ = originZ + 62;
 		mc.theWorld.setBlockAndMetadataWithNotify(signX, originY + 1, signZ, Block.signPost.blockID, 0);
 		TileEntitySign sign = (TileEntitySign)mc.theWorld.getBlockTileEntity(signX, originY + 1, signZ);
 		String symbols = "!@#$%^&*()_+-=[]{}<>/?ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 		StringBuffer text = new StringBuffer(15);
 		for(int i = 0; i < 15; ++i) text.append(symbols.charAt(RANDOM.nextInt(symbols.length())));
 		if(sign != null) sign.signText[0] = text.toString();
-		mc.thePlayer.setPositionAndRotation(originX + 1.5D, originY + 1.0D, originZ + 0.5D, 0.0F, 0.0F);
+		mc.thePlayer.setPositionAndRotation(originX + 1.5D, MAZE_TELEPORT_Y, originZ + 0.5D, 0.0F, 0.0F);
 		mc.thePlayer.motionX = 0.0D;
 		mc.thePlayer.motionY = 0.0D;
 		mc.thePlayer.motionZ = 0.0D;
 		mc.thePlayer.fallDistance = 0.0F;
+		mc.thePlayer.onGround = true;
 	}
 
 	private static void saveWindowPosition() {
@@ -255,8 +301,8 @@ public final class NaNManager {
 		activeTicks = 0;
 		delayedInsultTicks = 0;
 		fakeErrorInsults = false;
-		permanentJitter = false;
-		permanentRedButtons = false;
+		permanentJitter = lockedState;
+		permanentRedButtons = lockedState;
 		permanentWindowTitle = false;
 		permanentDebugCorruption = false;
 		permanentInventoryCorruption = false;
@@ -343,6 +389,9 @@ public final class NaNManager {
 
 	private static void startEffect(Minecraft mc, int effectId, int durationTicks) {
 		beginEffect(effectId, durationTicks);
+		if(effectId == EFFECT_CRASH) {
+			mc.sndManager.playSoundFX("glitch.crash", 1.0F, 1.0F);
+		}
 		if(effectId == EFFECT_FAKE_ERROR && isActive(effectId)) {
 			System.err.println("fullscreenEnabler failed to restore display mode.");
 			mc.ingameGUI.addChatMessage("\u00a7cfullscreenEnabler failed to restore display mode.");
@@ -382,7 +431,7 @@ public final class NaNManager {
 	}
 
 	public static void beginEffect(int effectId, int durationTicks) {
-		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_BEDROCK_MAZE) return;
+		if(effectId < EFFECT_VOXEL_COLLAPSE || effectId > EFFECT_CRASH) return;
 		if(effectId == EFFECT_UI_JITTER) permanentJitter = true;
 		if(effectId == EFFECT_RED_BUTTONS) permanentRedButtons = true;
 		if(effectId == EFFECT_WINDOW_TITLE) permanentWindowTitle = true;
@@ -451,7 +500,9 @@ public final class NaNManager {
 			try {
 				int multiplier = Integer.parseInt(parts[0].substring(1));
 				if(multiplier < 1) return "Usage: /x<number>";
-				ticksUntilEvent = Math.max(1, ticksUntilEvent * intervalMultiplier / multiplier);
+				int oldMultiplier = intervalMultiplier;
+				long adjustedTicks = (long)ticksUntilEvent * oldMultiplier / multiplier;
+				ticksUntilEvent = Math.max(1, (int)Math.min((long)ticksUntilEvent, adjustedTicks));
 				intervalMultiplier = multiplier;
 				return "NaN event interval multiplier: x" + intervalMultiplier;
 			} catch(NumberFormatException exception) {
@@ -593,6 +644,7 @@ public final class NaNManager {
 		case EFFECT_WIREFRAME_BLOOD: return "wireframe_blood";
 		case EFFECT_VERTIGO_CRUSH: return "vertigo_crush";
 		case EFFECT_BEDROCK_MAZE: return "maze";
+		case EFFECT_CRASH: return "crash";
 		default: return "unknown";
 		}
 	}
@@ -643,6 +695,7 @@ public final class NaNManager {
 		if("wireframe_blood".equalsIgnoreCase(name) || "bloodwire".equalsIgnoreCase(name)) return EFFECT_WIREFRAME_BLOOD;
 		if("vertigo_crush".equalsIgnoreCase(name) || "vertigo".equalsIgnoreCase(name)) return EFFECT_VERTIGO_CRUSH;
 		if("maze".equalsIgnoreCase(name) || "labyrinth".equalsIgnoreCase(name)) return EFFECT_BEDROCK_MAZE;
+		if("crash".equalsIgnoreCase(name)) return EFFECT_CRASH;
 		return 0;
 	}
 
@@ -656,6 +709,7 @@ public final class NaNManager {
 		if(effectId == EFFECT_INSULTS) return 20 * 4;
 		if(effectId == EFFECT_INVENTORY_SHUFFLE) return 20 * 15;
 		if(effectId == EFFECT_BEDROCK_MAZE) return 1;
+		if(effectId == EFFECT_CRASH) return 20 * 16;
 		if(effectId == EFFECT_SIGN_SPAWN || effectId == EFFECT_DROP_ACTIVE) return 1;
 		if(effectId == EFFECT_MINIMAL_RENDER) return 20 * 20;
 		if(effectId == EFFECT_SCREEN_INVERSION) return 20 * 8;
@@ -738,7 +792,7 @@ public final class NaNManager {
 	}
 
 	public static String randomizeText(String text) {
-			if(!isActive(EFFECT_TEXT_CORRUPTION) || text == null) return text;
+			if((!isActive(EFFECT_TEXT_CORRUPTION) && !lockedState) || text == null) return text;
 			String symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}<>/?";
 			StringBuffer result = new StringBuffer(text.length());
 			for(int i = 0; i < text.length(); ++i) {
@@ -751,6 +805,54 @@ public final class NaNManager {
 			}
 			return result.toString();
 		}
+
+	private static boolean readLockedState() {
+		File file = new File(Minecraft.getMinecraftDir(), "locked.txt");
+		if(!file.exists()) {
+			FileWriter writer = null;
+			try {
+				writer = new FileWriter(file, false);
+				writer.write("0");
+			} catch(IOException exception) {
+				System.err.println("Could not initialize locked.txt: " + exception.getMessage());
+			} finally {
+				if(writer != null) try { writer.close(); } catch(IOException exception) {
+					System.err.println("Could not close locked.txt: " + exception.getMessage());
+				}
+			}
+			return false;
+		}
+		java.io.BufferedReader reader = null;
+		try {
+			reader = new java.io.BufferedReader(new java.io.FileReader(file));
+			return "1".equals(reader.readLine());
+		} catch(IOException exception) {
+			System.err.println("Could not read locked.txt: " + exception.getMessage());
+			return false;
+		} finally {
+			if(reader != null) try { reader.close(); } catch(IOException exception) {
+				System.err.println("Could not close locked.txt: " + exception.getMessage());
+			}
+		}
+	}
+
+	private static void crashGame() {
+		File file = new File(Minecraft.getMinecraftDir(), "locked.txt");
+		FileWriter writer = null;
+		try {
+			writer = new FileWriter(file, false);
+			writer.write("1");
+		} catch(IOException exception) {
+			throw new RuntimeException("Could not write locked.txt", exception);
+		} finally {
+			if(writer != null) try { writer.close(); } catch(IOException exception) {
+				throw new RuntimeException("Could not close locked.txt", exception);
+			}
+		}
+		OutOfMemoryError error = new OutOfMemoryError("Out of Memory");
+		error.setStackTrace(new StackTraceElement[0]);
+		throw error;
+	}
 
 	private static void logRandomSymbols() {
 			String symbols = "!@#$%^&*()_+-=[]{}<>/?ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -771,6 +873,10 @@ public final class NaNManager {
 			GL11.glTranslatef((RANDOM.nextFloat() - 0.5F) * 0.18F, (RANDOM.nextFloat() - 0.5F) * 0.18F, 0.0F);
 			GL11.glRotatef((RANDOM.nextFloat() - 0.5F) * 2.0F, 0.0F, 0.0F, 1.0F);
 		}
+		if(isActive(EFFECT_CRASH)) {
+			GL11.glRotatef((RANDOM.nextFloat() - 0.5F) * 18.0F, 0.0F, 0.0F, 1.0F);
+			GL11.glScalef(1.0F + RANDOM.nextFloat() * 0.35F, 1.0F - RANDOM.nextFloat() * 0.2F, 1.0F);
+		}
 		if(isActive(EFFECT_VOXEL_COLLAPSE)) {
 			float phase = (activeTicks % 8) / 8.0F - 0.5F;
 			float pulse = 1.0F + Math.abs(phase) * 0.18F;
@@ -783,7 +889,7 @@ public final class NaNManager {
 	public static boolean hideHud() {
 		return activeEffect == EFFECT_VOXEL_COLLAPSE || activeEffect == EFFECT_FRAME_BLEED || activeEffect == EFFECT_RED_TEXT ||
 			activeEffect == EFFECT_RED_BARS || activeEffect == EFFECT_MINIMAL_RENDER || activeEffect == EFFECT_FAKE_ERROR ||
-			activeEffect == EFFECT_TERRAIN_CORRUPTION;
+			activeEffect == EFFECT_TERRAIN_CORRUPTION || activeEffect == EFFECT_CRASH;
 	}
 
 	public static void renderEffectOverlay(Minecraft mc, int width, int height) {
@@ -801,7 +907,18 @@ public final class NaNManager {
 		GL11.glDisable(GL11.GL_CULL_FACE);
 		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-		if(activeEffect == EFFECT_RED_TEXT) {
+		if(activeEffect == EFFECT_CRASH) {
+			GL11.glDisable(GL11.GL_TEXTURE_2D);
+			GL11.glColor4f(0.85F, 0.0F, 0.0F, 0.72F);
+			drawBand(0, 0, width, height);
+			GL11.glEnable(GL11.GL_TEXTURE_2D);
+			String[] insults = {"YOU FAILED", "NO ESCAPE", "LOOK BEHIND YOU", "OUT OF MEMORY", "SYSTEM ERROR"};
+			for(int i = 0; i < 8; ++i) {
+				int x = RANDOM.nextInt(Math.max(1, width - 100));
+				int y = RANDOM.nextInt(Math.max(1, height - 10));
+				mc.fontRenderer.drawString(insults[RANDOM.nextInt(insults.length)], x, y, 16711680);
+			}
+		} else if(activeEffect == EFFECT_RED_TEXT) {
 			GL11.glEnable(GL11.GL_TEXTURE_2D);
 			if(fakeErrorInsults) {
 				String[] insults = {"You are weak.", "Nobody will find you.", "Stop pretending.", "You should have left.", "This world hates you.",

@@ -252,7 +252,7 @@ net/minecraft/src/MetadataChunkBlock 563ca3860667fc29601e4267192d0642
 net/minecraft/src/MinecraftException c3e6d9e46c9f44513f74c73f08961284
 net/minecraft/src/ModelBed 7c156e69a91fee263dcf3e45f11ed511
 net/minecraft/src/MovingObjectPosition bf0f281fa299f65f842efc9305804ce3
-net/minecraft/src/NaNManager 38fd7ed5d291f33f0d3d207a5e60b38e
+net/minecraft/src/NaNManager df53d8839974ef1cfe05b25eda2646c6
 net/minecraft/src/NaNRuntime 46a26b6a18ad4aaaa0d1b589ee11a62b
 net/minecraft/src/NBTBase 06858536273e1e8a6fabe856fb0760cb
 net/minecraft/src/NBTTagByte 21e1b9ffee3aa3df48250cca489d74e3
